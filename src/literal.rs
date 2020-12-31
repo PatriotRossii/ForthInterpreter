@@ -78,3 +78,9 @@ impl PartialOrd for Literal {
 		}
 	}
 }
+
+impl From<i64> for Literal {
+	fn from(value: i64) -> Self {
+		Literal::Integer(value)
+	}
+}

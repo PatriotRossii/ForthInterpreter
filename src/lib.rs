@@ -10,6 +10,12 @@ use errors::ForthError::{self, StackUnderflow, InvalidOperands};
 
 type Result<T> = std::result::Result<T, ForthError>;
 
+macro_rules! ternary {
+    ($c:expr, $v:expr, $v1:expr) => {
+        if $c {$v} else {$v1}
+    };
+}
+
 pub struct ForthInterpreter {
 	stack: Stack<Literal>,
 }
@@ -131,6 +137,43 @@ impl ForthInterpreter {
 		print!("\n");
 		Ok(())
 	}
+
+	fn equal(&mut self) -> Result<()> {
+		let (a, b) = self.get_binary_operands()?;
+		self.stack.push(Literal::Integer(ternary!(a == b, -1, 0)));
+		Ok(())
+	}
+
+	fn less_than(&mut self) -> Result<()> {
+		let (a, b) = self.get_binary_operands()?;
+		self.stack.push(Literal::Integer(ternary!(a < b, -1, 0)));
+		Ok(())
+	}
+
+	fn greater_than(&mut self) -> Result<()> {
+		let (a, b) = self.get_binary_operands()?;
+		self.stack.push(Literal::Integer(ternary!(a > b, -1, 0)));
+		Ok(())
+	}
+
+	fn and(&mut self) -> Result<()> {
+		let (a, b) = self.get_binary_operands()?;
+		self.stack.push(Literal::Integer(ternary!(a != 0.into() && b != 0.into(), -1, 0)));
+		Ok(())
+	}
+
+	fn or(&mut self) -> Result<()> {
+		let (a, b) = self.get_binary_operands()?;
+		self.stack.push(Literal::Integer(ternary!(a != 0.into() || b != 0.into(), -1, 0)));
+		Ok(())
+	}
+	
+	fn invert(&mut self) -> Result<()> {
+		let a = self.stack.pop().ok_or(StackUnderflow)?;
+		self.stack.push(Literal::Integer(ternary!(a == 0.into(), -1, 0)));
+		Ok(())
+	}
+
 
 	fn push(&mut self, value: Literal) {
 		self.stack.push(value);
