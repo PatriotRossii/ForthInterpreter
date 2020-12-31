@@ -1,3 +1,5 @@
+#![feature(assoc_char_funcs)]
+
 mod literal;
 mod stack;
 mod errors;
@@ -8,12 +10,12 @@ use errors::ForthError::{self, StackUnderflow, InvalidOperands};
 
 type Result<T> = std::result::Result<T, ForthError>;
 
-struct ForthInterpreter {
+pub struct ForthInterpreter {
 	stack: Stack<Literal>,
 }
 
 impl ForthInterpreter {
-	fn new() -> Self {
+	pub fn new() -> Self {
 		Self {
 			stack: Stack::new()
 		}
@@ -51,31 +53,82 @@ impl ForthInterpreter {
 		Err(InvalidOperands)
 	}
 
-        fn mul(&mut self) -> Result<()> {
-                let (a, b) = self.get_binary_operands()?;
-                if let Literal::Integer(a) = a {
-                        if let Literal::Integer(b) = b {
-                                self.push(Literal::Integer(a * b));
-                                return Ok(()) 
-                        }
-                }
-                Err(InvalidOperands)
+    fn mul(&mut self) -> Result<()> {
+        let (a, b) = self.get_binary_operands()?;
+        if let Literal::Integer(a) = a {
+            if let Literal::Integer(b) = b {
+                self.push(Literal::Integer(a * b));
+                return Ok(()) 
+            }
         }
+        Err(InvalidOperands)
+    }
 
-        fn div(&mut self) -> Result<()> {
-                let (a, b) = self.get_binary_operands()?;
-                if let Literal::Integer(a) = a {
-                        if let Literal::Integer(b) = b {
-                                self.push(Literal::Integer(a / b));
-                                return Ok(()) 
-                        }
-                }
-                Err(InvalidOperands)
-        }
+	fn div(&mut self) -> Result<()> {
+        let (a, b) = self.get_binary_operands()?;
+        if let Literal::Integer(a) = a {
+            if let Literal::Integer(b) = b {
+                self.push(Literal::Integer(a / b));
+                return Ok(()) 
+            }
+    	}
+        Err(InvalidOperands)
+    }
 
 	fn dup(&mut self) -> Result<()> {
 		self.push(*self.get_last_literal()?);
-		println!("{:?}", self.stack);
+		Ok(())
+	}
+
+	fn drop(&mut self) -> Result<()> {
+		self.stack.pop().ok_or(StackUnderflow)?;
+		Ok(())
+	}
+
+	fn swap(&mut self) -> Result<()> {
+		let length = self.stack.length();
+		if length >= 2 {
+			self.stack.swap(length - 2, length - 1);
+			Ok(())
+		} else {
+			Err(StackUnderflow)
+		}
+	}
+
+	fn over(&mut self) -> Result<()> {
+		let length = self.stack.length();
+		if length >= 2 {
+			self.push(self.stack.get(length - 2));
+			return Ok(())
+		}
+		Err(StackUnderflow)
+	}
+
+	fn rot(&mut self) -> Result<()> {
+		let length = self.stack.length();
+		if length >= 3 {
+			let element = self.stack.remove(length - 3);
+			self.stack.push(element);
+			return Ok(())
+		}
+		Err(StackUnderflow)
+	}
+
+	fn print_top(&mut self) -> Result<()> {
+		print!("{}", *self.stack.last().ok_or(StackUnderflow)?);
+		Ok(())
+	}
+
+	fn emit(&mut self) -> Result<()> {
+		let last = *self.stack.last().ok_or(StackUnderflow)?;
+		if let Literal::Integer(i) = last {
+			print!("{}", char::from_u32(i as u32).ok_or(InvalidOperands)?);
+		}
+		Ok(())
+	}
+
+	fn cr(&mut self) -> Result<()> {
+		print!("\n");
 		Ok(())
 	}
 
