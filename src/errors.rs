@@ -4,4 +4,6 @@ use thiserror::Error;
 pub enum ForthError {
 	#[error("stack underflow")]
 	StackUnderflow,
+	#[error("invalid operands")]
+	InvalidOperands,
 }
