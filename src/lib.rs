@@ -4,9 +4,11 @@ mod literal;
 mod stack;
 mod errors;
 
+use std::collections::HashMap;
+
 use stack::Stack;
 use literal::Literal;
-use errors::ForthError::{self, StackUnderflow, InvalidOperands};
+use errors::ForthError::{self, StackUnderflow, InvalidOperands, VariableNotExist};
 
 type Result<T> = std::result::Result<T, ForthError>;
 
@@ -18,12 +20,14 @@ macro_rules! ternary {
 
 pub struct ForthInterpreter {
 	stack: Stack<Literal>,
+	variables: HashMap<Literal, Option<Literal>>
 }
 
 impl ForthInterpreter {
 	pub fn new() -> Self {
 		Self {
-			stack: Stack::new()
+			stack: Stack::new(),
+			variables: HashMap::new(),
 		}
 	}
 	
@@ -174,6 +178,29 @@ impl ForthInterpreter {
 		Ok(())
 	}
 
+	fn variable(&mut self) -> Result<()> {
+		let var_name = self.stack.pop().ok_or(StackUnderflow)?;
+		self.variables.insert(var_name, None);
+		Ok(())
+	}
+
+	fn store_variable(&mut self) -> Result<()> {
+		let (var_value, var_name) = self.get_binary_operands()?;
+		if  !self.variables.contains_key(&var_name) {
+			return Err(VariableNotExist);
+		}
+		self.variables.insert(var_name, Some(var_value));
+		Ok(())
+	}
+
+	fn get_variable(&mut self) -> Result<()> {
+		let var_name = self.stack.pop().ok_or(VariableNotExist)?;
+		if !self.variables.contains_key(&var_name) {
+			return Err(VariableNotExist);
+		}
+		self.stack.push(self.variables[&var_name].unwrap());
+		Ok(())
+	}
 
 	fn push(&mut self, value: Literal) {
 		self.stack.push(value);

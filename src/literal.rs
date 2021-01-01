@@ -1,6 +1,6 @@
 use std::{cmp::Ordering, fmt::{self, Display}};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Eq, Hash)]
 pub enum Literal {
 	Integer(i64),
 	String(&'static str),
