@@ -6,4 +6,6 @@ pub enum ForthError {
 	StackUnderflow,
 	#[error("invalid operands")]
 	InvalidOperands,
+	#[error("There are no such variable")]
+	VariableNotExist
 }
