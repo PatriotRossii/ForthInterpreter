@@ -1,0 +1,29 @@
+START_OF_COMMENT = _{ "(" }
+END_OF_COMMENT = _{ ")" }
+
+WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
+COMMENT = _{
+    START_OF_COMMENT ~ (!(NEWLINE | END_OF_COMMENT) ~ ANY)* ~ END_OF_COMMENT
+}
+
+integer = @{ ("+" | "-")? ~ ASCII_DIGIT+ }
+string = @{ "\"" ~ LETTER* ~ "\""}
+literal = @{ integer | string }
+
+native_ident = @{ (MATH_SYMBOL | ASCII_ALPHANUMERIC)+ }
+user_ident = @{ !ASCII_DIGIT ~ (ASCII_ALPHANUMERIC ~ "_"?)+ }
+
+ident = {native_ident | user_ident}
+
+variable_definition = {"variable" ~ ident}
+constant_definition  = {literal ~ "constant" ~ ident}
+
+expression = { (literal | ident) ~ expression* }
+
+if_then_statement = { "if" ~ expression ~ "then"}
+if_else_then_statement = {"if" ~ expression ~ "else" ~ expression ~ "then"}
+do_loop = { "do" ~ ident ~ expression ~ "loop" }
+
+word_definition = {
+    ":" ~ ident ~ expression ~ ";"
+}
