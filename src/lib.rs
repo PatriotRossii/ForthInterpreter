@@ -1,14 +1,22 @@
 #![feature(assoc_char_funcs)]
 
+extern crate pest;
+#[macro_use]
+extern crate pest_derive;
+
 mod literal;
 mod stack;
 mod errors;
+pub mod parser;
 
 use std::collections::HashMap;
 
 use stack::Stack;
 use literal::Literal;
 use errors::ForthError::{self, StackUnderflow, InvalidOperands, VariableNotExist};
+
+use pest::Parser;
+use parser::*;
 
 type Result<T> = std::result::Result<T, ForthError>;
 
@@ -18,16 +26,35 @@ macro_rules! ternary {
     };
 }
 
+type WordFn = fn(&mut ForthInterpreter) -> Result<()>;
+
 pub struct ForthInterpreter {
 	stack: Stack<Literal>,
-	variables: HashMap<Literal, Option<Literal>>
+	variables: HashMap<Literal, Option<Literal>>,
+	constants: HashMap<Literal, Literal>, // No need in Option cause constant is initialized always
+
+	words: HashMap<Literal, WordFn>,
 }
 
 impl ForthInterpreter {
 	pub fn new() -> Self {
+		let words: HashMap<i32, i32> = [(1, 2), (1, 2), (2, 3)].iter().cloned().collect();
 		Self {
 			stack: Stack::new(),
 			variables: HashMap::new(),
+			constants: HashMap::new(),
+
+			words: [
+				("+".into(), ForthInterpreter::add as WordFn), ("-".into(), ForthInterpreter::sub),
+				("*".into(), ForthInterpreter::mul), ("/".into(), ForthInterpreter::div),
+				("dup".into(), ForthInterpreter::dup), ("drop".into(), ForthInterpreter::drop),
+				("swap".into(), ForthInterpreter::swap), ("over".into(), ForthInterpreter::over),
+				("rot".into(), ForthInterpreter::rot), (".".into(), ForthInterpreter::print_top),
+				("emit".into(), ForthInterpreter::emit), ("cr".into(), ForthInterpreter::cr),
+				("=".into(), ForthInterpreter::equal), ("<".into(), ForthInterpreter::less_than),
+				(">".into(), ForthInterpreter::greater_than), ("invert".into(), ForthInterpreter::invert),
+				("and".into(), ForthInterpreter::and), ("or".into(), ForthInterpreter::or)
+			].iter().cloned().collect(),
 		}
 	}
 	
@@ -96,13 +123,10 @@ impl ForthInterpreter {
 	}
 
 	fn swap(&mut self) -> Result<()> {
-		let length = self.stack.length();
-		if length >= 2 {
-			self.stack.swap(length - 2, length - 1);
-			Ok(())
-		} else {
-			Err(StackUnderflow)
-		}
+		let (a, b) = self.get_binary_operands()?;
+		self.push(b);
+		self.push(a);
+		Ok(())
 	}
 
 	fn over(&mut self) -> Result<()> {
@@ -205,6 +229,57 @@ impl ForthInterpreter {
 	fn push(&mut self, value: Literal) {
 		self.stack.push(value);
 	}
+
+	fn execute_literal(&mut self, literal: pest::iterators::Pair<parser::Rule>) {
+		for inner_pair in literal.into_inner() {
+			match inner_pair.as_rule() {
+				Rule::integer => { self.push(inner_pair.as_str().parse::<i64>().unwrap().into())}
+				Rule::string => { todo!("Fix this shit with &'static str") }
+				_ => unreachable!()
+			}
+		}
+	}
+
+	fn execute_ident(&mut self, ident: pest::iterators::Pair<parser::Rule>) {
+		for inner_pair in ident.into_inner() {
+			match inner_pair.as_rule() {
+				
+			}
+		}
+	}
+
+	fn execute_expression(&mut self, expr: pest::iterators::Pair<parser::Rule>) {
+		for inner_pair in expr.into_inner() {
+			match inner_pair.as_rule() {
+				Rule::literal => {},
+				Rule::ident => {},
+				_ => unreachable!()
+			}
+		}
+	}
+
+	fn execute_definition(&mut self, def: pest::iterators::Pair<parser::Rule>) {
+		for inner_pair in def.into_inner() {
+			match inner_pair.as_rule() {
+				_ => unreachable!()
+			}
+		}
+	}
+
+	pub fn execute_line(&mut self, line: &str) {
+		let pairs = ForthParser::parse(Rule::line, line).unwrap();
+		for pair in pairs {
+			for inner_pair in pair.into_inner() {
+				match inner_pair.as_rule() {
+					Rule::expression => {
+						self.execute_expression(inner_pair);
+					}
+					Rule::definition => {}
+					_ => unreachable!()
+				}
+			}		
+		}
+	}
 }
 
 #[cfg(test)]
@@ -217,5 +292,13 @@ mod tests {
 		let mut forth: ForthInterpreter = ForthInterpreter::new();
 		forth.push(Literal::Integer(5));
 		forth.push(Literal::Integer(5));
+	}
+
+	#[test]
+	fn test_parsing() {
+		use crate::ForthInterpreter;
+		
+		let mut forth: ForthInterpreter = ForthInterpreter::new();
+		forth.execute_line("a b +")
 	}
 }
