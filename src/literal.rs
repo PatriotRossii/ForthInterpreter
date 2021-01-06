@@ -84,3 +84,9 @@ impl From<i64> for Literal {
 		Literal::Integer(value)
 	}
 }
+
+impl From<&'static str> for Literal {
+	fn from(value: &'static str) -> Self {
+		Literal::String(value)
+	}
+}
