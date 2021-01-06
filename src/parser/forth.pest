@@ -18,7 +18,7 @@ ident = {native_ident | user_ident}
 variable_definition = {"variable" ~ ident}
 constant_definition  = {literal ~ "constant" ~ ident}
 
-expression = { (literal | ident) ~ expression* }
+expression = { (literal | ident) ~ (literal | ident)* }
 
 if_then_statement = { "if" ~ expression ~ "then"}
 if_else_then_statement = {"if" ~ expression ~ "else" ~ expression ~ "then"}
