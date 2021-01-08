@@ -68,8 +68,8 @@ impl ForthInterpreter {
 		Ok(self.stack.last().ok_or(StackUnderflow)?)
 	}
 
-	pub fn get_stack_dump(&self) -> String {
-		format!("{:?}", self.stack)
+	pub fn get_stack_dump(&self) -> &Stack<Literal> {
+		&self.stack
 	}
 
 	fn bool(&self, literal: &Literal) -> bool {

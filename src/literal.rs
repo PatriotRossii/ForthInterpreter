@@ -1,4 +1,5 @@
 use std::{cmp::Ordering, fmt::{self, Display}};
+use cpython::{PyList, Python, ToPyObject, PyString};
 
 #[derive(Debug, Clone, Eq, Hash)]
 pub enum Literal {
@@ -94,5 +95,20 @@ impl From<&str> for Literal {
 impl From<String> for Literal {
 	fn from(value: String) -> Self {
 		Literal::String(value)
+	}
+}
+
+impl ToPyObject for Literal {
+	type ObjectType = PyString;
+	fn to_py_object(&self, py: Python) -> Self::ObjectType {
+		match &self {
+			&Literal::Integer(i) => {
+				PyString::new(py, &i.to_string())
+			},
+			&Literal::String(i) => {
+				PyString::new(py, i.as_str())
+			},
+			_ => unreachable!()
+		}
 	}
 }
