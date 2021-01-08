@@ -1,15 +1,15 @@
 use std::{cmp::Ordering, fmt::{self, Display}};
 
-#[derive(Debug, Clone, Copy, Eq, Hash)]
+#[derive(Debug, Clone, Eq, Hash)]
 pub enum Literal {
 	Integer(i64),
-	String(&'static str),
+	String(String),
 	Unknown,
 }
 
 impl Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		match self {
+		match &self {
 			&Literal::Integer(i) => {
 				write!(f, "{}", i)
 			},
@@ -25,16 +25,16 @@ impl Display for Literal {
 
 impl PartialEq for Literal {
 	fn eq(&self, other: &Self) -> bool {
-		match self {
+		match &self {
 			&Literal::Integer(i) => {
 				if let &Literal::Integer(j) = other {
-					i == j
+					*i == j
 				} else {
 					false
 				}
 			},
 			&Literal::String(s) => {
-				if let &Literal::String(os) = other {
+				if let Literal::String(os) = other {
 					s == os
 				} else {
 					false
@@ -53,7 +53,7 @@ impl PartialEq for Literal {
 
 impl PartialOrd for Literal {
 	fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-		match self {
+		match &self {
 			&Literal::Integer(i) => {
 				if let &Literal::Integer(j) = other {
 					i.partial_cmp(&j)
@@ -62,8 +62,8 @@ impl PartialOrd for Literal {
 				}
 			},
 			&Literal::String(s) => {
-				if let &Literal::String(os) = other {
-					s.partial_cmp(os)
+				if let Literal::String(os) = other {
+					s.partial_cmp(&os)
 				} else {
 					None
 				}
@@ -85,8 +85,14 @@ impl From<i64> for Literal {
 	}
 }
 
-impl From<&'static str> for Literal {
-	fn from(value: &'static str) -> Self {
+impl From<&str> for Literal {
+	fn from(value: &str) -> Self {
+		Literal::String(value.into())
+	}
+}
+
+impl From<String> for Literal {
+	fn from(value: String) -> Self {
 		Literal::String(value)
 	}
 }

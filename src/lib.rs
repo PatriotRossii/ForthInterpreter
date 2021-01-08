@@ -113,7 +113,7 @@ impl ForthInterpreter {
     }
 
 	fn dup(&mut self) -> Result<()> {
-		self.push(*self.get_last_literal()?);
+		self.push(self.get_last_literal()?.clone());
 		Ok(())
 	}
 
@@ -132,7 +132,7 @@ impl ForthInterpreter {
 	fn over(&mut self) -> Result<()> {
 		let length = self.stack.length();
 		if length >= 2 {
-			self.push(self.stack.get(length - 2));
+			self.push((*self.stack.get(length - 2)).clone());
 			return Ok(())
 		}
 		Err(StackUnderflow)
@@ -222,7 +222,7 @@ impl ForthInterpreter {
 		if !self.variables.contains_key(&var_name) {
 			return Err(VariableNotExist);
 		}
-		self.stack.push(self.variables[&var_name].unwrap());
+		self.stack.push(self.variables[&var_name].clone().unwrap());
 		Ok(())
 	}
 

@@ -3,7 +3,7 @@ pub struct Stack<T> {
         stack: Vec<T>
 }
 
-impl<T: Copy> Stack<T> {
+impl<T: Clone> Stack<T> {
 	pub fn new() -> Self {
 		Self {
 			stack: Vec::new()
@@ -30,8 +30,8 @@ impl<T: Copy> Stack<T> {
 		self.stack.swap(a, b)
 	}
 
-	pub(crate) fn get(&self, a: usize) -> T {
-		self.stack[a]
+	pub(crate) fn get(&self, a: usize) -> &T {
+		&self.stack[a]
 	}
 
 	pub(crate) fn remove(&mut self, a: usize) -> T {
