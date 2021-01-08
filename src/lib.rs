@@ -9,7 +9,7 @@ mod stack;
 mod errors;
 pub mod parser;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, hash_map::{Entry}};
 
 use stack::Stack;
 use literal::Literal;
@@ -67,6 +67,18 @@ impl ForthInterpreter {
 	fn get_last_literal(&self) -> Result<&Literal> {
 		Ok(self.stack.last().ok_or(StackUnderflow)?)
 	}		
+
+	fn bool(&self, literal: &Literal) -> bool {
+		match &literal {
+			&Literal::Integer(i) => {
+				!(*i != -1i64)
+			},
+			Literal::String(_) => {
+				true
+			},
+			_ => unreachable!()
+		}
+	}
 
 	fn add(&mut self) -> Result<()> {
 		let (a, b) = self.get_binary_operands()?;
@@ -154,8 +166,8 @@ impl ForthInterpreter {
 	}
 
 	fn emit(&mut self) -> Result<()> {
-		let last = *self.stack.last().ok_or(StackUnderflow)?;
-		if let Literal::Integer(i) = last {
+		let last = self.stack.last().ok_or(StackUnderflow)?;
+		if let &Literal::Integer(i) = last {
 			print!("{}", char::from_u32(i as u32).ok_or(InvalidOperands)?);
 		}
 		Ok(())
@@ -234,7 +246,7 @@ impl ForthInterpreter {
 		for inner_pair in literal.into_inner() {
 			match inner_pair.as_rule() {
 				Rule::integer => { self.push(inner_pair.as_str().parse::<i64>().unwrap().into())}
-				Rule::string => { todo!("Fix this shit with &'static str") }
+				Rule::string => { self.push(String::from(inner_pair.as_str()).into()) }
 				_ => unreachable!()
 			}
 		}
@@ -242,25 +254,154 @@ impl ForthInterpreter {
 
 	fn execute_ident(&mut self, ident: pest::iterators::Pair<parser::Rule>) {
 		for inner_pair in ident.into_inner() {
-			match inner_pair.as_rule() {
-				
+			let name = inner_pair.as_str();
+
+			let variable = self.variables.get(&name.into());
+			if let Some(e) = variable {
+				return self.push((e as *const Option<Literal> as i64).into());
 			}
+
+			let r#const = self.constants.get(&name.into());
+			if let Some(e) = r#const {
+				return self.push(e.clone());
+			}
+
+			let word = self.words.get(&name.into());
+			if let Some(e) = word {
+				return e(self).unwrap();
+			}
+
+			panic!("Invalid ident");
 		}
 	}
 
 	fn execute_expression(&mut self, expr: pest::iterators::Pair<parser::Rule>) {
 		for inner_pair in expr.into_inner() {
 			match inner_pair.as_rule() {
-				Rule::literal => {},
-				Rule::ident => {},
+				Rule::literal => { self.execute_literal(inner_pair) },
+				Rule::ident => { self.execute_ident(inner_pair) },
 				_ => unreachable!()
 			}
 		}
 	}
 
+	fn execute_variable_definition(&mut self, var_def: pest::iterators::Pair<parser::Rule>) {
+		for inner_pair in var_def.into_inner() {
+			match inner_pair.as_rule() {
+				Rule::ident => {
+					self.variables.insert(inner_pair.as_str().into(), None);
+				},
+				_ => unreachable!()
+			}
+		}
+	}
+
+	fn execute_constant_definition(&mut self, const_def: pest::iterators::Pair<parser::Rule>) {
+		let mut value: Option<Literal> = None;
+		let mut var_name: Option<Literal> = None;
+
+		for inner_pair in const_def.into_inner() {
+			match inner_pair.as_rule() {
+				Rule::ident => {
+					var_name = Some(inner_pair.as_str().into());
+				}
+				Rule::literal => {
+					value = Some(inner_pair.as_str().into());
+				}
+				_ => unreachable!()
+			}
+		}
+		self.constants.insert(var_name.unwrap(), value.unwrap());
+	}
+
+	fn execute_if_then_statement(&mut self, stmt: pest::iterators::Pair<parser::Rule>) {
+		let condition = self.bool(self.get_last_literal().unwrap());
+		if condition {
+			let pair = stmt.into_inner().nth(0).unwrap();
+			match pair.as_rule() {
+				Rule::expression => { self.execute_expression(pair) },
+				_ => unreachable!()
+			}
+		}
+	}
+
+	fn execute_if_else_then_statement(&mut self, stmt: pest::iterators::Pair<parser::Rule>) {
+		let condition = self.bool(self.get_last_literal().unwrap());
+		let pair = {
+			if condition {
+				stmt.into_inner().nth(0).unwrap()
+			} else {
+				stmt.into_inner().nth(1).unwrap()
+			}
+		};
+		match pair.as_rule() {
+			Rule::expression => { self.execute_expression(pair) },
+			_ => unreachable!()
+		}
+	}
+
+	fn execute_do_loop(&mut self, stmt: pest::iterators::Pair<parser::Rule>) {
+		let (start, stop) = self.get_binary_operands().unwrap();
+		let expr = stmt.into_inner().nth(0).unwrap();
+
+		if let Literal::Integer(start) = start {
+			if let Literal::Integer(stop) = stop {
+				for _ in start..stop {
+					self.execute_expression(expr);
+				}
+			}
+		}
+	}
+
+	fn execute_statement(&mut self, statement: pest::iterators::Pair<parser::Rule>) {
+		for inner_pair in statement.into_inner() {
+			match inner_pair.as_rule() {
+				Rule::if_then_statement => {
+					self.execute_if_then_statement(inner_pair);
+				},
+				Rule::if_else_then_statement => {
+					self.execute_if_else_then_statement(inner_pair);
+				},
+				Rule::do_loop => {
+					self.execute_do_loop(inner_pair);
+				},
+				_ => unreachable!(),
+			}
+		}
+	}
+
+	fn execute_word_definition(&mut self, word_def: pest::iterators::Pair<parser::Rule>) {
+		let mut name: Option<Literal> = None;
+
+		for inner_pair in word_def.into_inner() {
+			match inner_pair.as_rule() {
+				Rule::ident => {
+					name = Some(inner_pair.as_str().into());
+				}
+				Rule::expression => {
+					todo!()
+				},
+				Rule::statement => {
+					todo!()
+				}
+				_ => unreachable!()	
+			}
+		}
+		todo!();
+	}
+
 	fn execute_definition(&mut self, def: pest::iterators::Pair<parser::Rule>) {
 		for inner_pair in def.into_inner() {
 			match inner_pair.as_rule() {
+				Rule::variable_definition => {
+					self.execute_variable_definition(inner_pair);
+				},
+				Rule::constant_definition => {
+					self.execute_constant_definition(inner_pair);
+				},
+				Rule::word_definition => {
+					self.execute_word_definition(inner_pair);
+				},
 				_ => unreachable!()
 			}
 		}
@@ -274,7 +415,9 @@ impl ForthInterpreter {
 					Rule::expression => {
 						self.execute_expression(inner_pair);
 					}
-					Rule::definition => {}
+					Rule::definition => {
+						self.execute_definition(inner_pair)
+					}
 					_ => unreachable!()
 				}
 			}		

@@ -27,7 +27,7 @@ do_loop = { "do" ~ ident ~ expression ~ "loop" }
 statement = { if_then_statement | if_else_then_statement | do_loop }
 
 word_definition = {
-    ":" ~ ident ~ (expression | if_then_statement | if_else_then_statement | do_loop) ~ ";"
+    ":" ~ ident ~ (expression | statement) ~ ";"
 }
 definition = { variable_definition | constant_definition | word_definition }
 
