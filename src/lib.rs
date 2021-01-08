@@ -64,9 +64,13 @@ impl ForthInterpreter {
 		Ok((a, b))
 	}
 
-	fn get_last_literal(&self) -> Result<&Literal> {
+	pub fn get_last_literal(&self) -> Result<&Literal> {
 		Ok(self.stack.last().ok_or(StackUnderflow)?)
-	}		
+	}
+
+	pub fn get_stack_dump(&self) -> String {
+		format!("{:?}", self.stack)
+	}
 
 	fn bool(&self, literal: &Literal) -> bool {
 		match &literal {
@@ -278,8 +282,8 @@ impl ForthInterpreter {
 	fn execute_expression(&mut self, expr: pest::iterators::Pair<parser::Rule>) {
 		for inner_pair in expr.into_inner() {
 			match inner_pair.as_rule() {
-				Rule::literal => { self.execute_literal(inner_pair) },
-				Rule::ident => { self.execute_ident(inner_pair) },
+				Rule::literal => { self.execute_literal(inner_pair); },
+				Rule::ident => { self.execute_ident(inner_pair); },
 				_ => unreachable!()
 			}
 		}
@@ -347,7 +351,7 @@ impl ForthInterpreter {
 		if let Literal::Integer(start) = start {
 			if let Literal::Integer(stop) = stop {
 				for _ in start..stop {
-					self.execute_expression(expr);
+					self.execute_expression(expr.clone());
 				}
 			}
 		}
@@ -372,6 +376,7 @@ impl ForthInterpreter {
 
 	fn execute_word_definition(&mut self, word_def: pest::iterators::Pair<parser::Rule>) {
 		let mut name: Option<Literal> = None;
+		let mut value: Option<pest::iterators::Pair<parser::Rule>> = None;
 
 		for inner_pair in word_def.into_inner() {
 			match inner_pair.as_rule() {
@@ -379,10 +384,10 @@ impl ForthInterpreter {
 					name = Some(inner_pair.as_str().into());
 				}
 				Rule::expression => {
-					todo!()
+					value = Some(inner_pair);
 				},
 				Rule::statement => {
-					todo!()
+					value = Some(inner_pair);
 				}
 				_ => unreachable!()	
 			}
@@ -416,7 +421,7 @@ impl ForthInterpreter {
 						self.execute_expression(inner_pair);
 					}
 					Rule::definition => {
-						self.execute_definition(inner_pair)
+						self.execute_definition(inner_pair);
 					}
 					_ => unreachable!()
 				}

@@ -8,3 +8,13 @@ edition = "2018"
 
 [dependencies]
 thiserror = "1.0"
+pest = "2"
+pest_derive = "2.0"
+
+[lib]
+name = "forth_interpreter"
+path = "src/lib.rs"
+
+[[bin]]
+name = "forth_interpreter_binary"
+path = "src/bin.rs"

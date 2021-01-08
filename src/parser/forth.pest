@@ -8,7 +8,7 @@ COMMENT = _{
 
 integer = @{ ("+" | "-")? ~ ASCII_DIGIT+ }
 string = @{ "\"" ~ LETTER* ~ "\""}
-literal = @{ integer | string }
+literal = { integer | string }
 
 native_ident = @{ "+" | "-" | "*" | "/" | ">" | "<" | "=" }
 user_ident = @{ !ASCII_DIGIT ~ (ASCII_ALPHANUMERIC ~ "_"?)+ }
