@@ -1,9 +1,12 @@
 use std::{cmp::Ordering, fmt::{self, Display}};
 use cpython::{PyList, Python, ToPyObject, PyString};
 
+type Integer = i64;
+type String = String;
+
 #[derive(Debug, Clone, Eq, Hash)]
 pub enum Literal {
-	Integer(i64),
+	Integer(Integer),
 	String(String),
 	Unknown,
 }
