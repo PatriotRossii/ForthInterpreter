@@ -10,10 +10,10 @@ mod stack;
 mod errors;
 pub mod parser;
 
-use std::collections::{HashMap, hash_map::{Entry}};
+use std::{collections::{HashMap, hash_map::{Entry}}, hash::Hash};
 
 use stack::Stack;
-use entities::simple::literal::Literal;
+use entities::{simple::literal::Literal, complex::definition::Word};
 use errors::ForthError::{self, StackUnderflow, InvalidOperands, VariableNotExist};
 
 use pest::Parser;
@@ -29,12 +29,19 @@ macro_rules! ternary {
 
 type WordFn = fn(&mut ForthInterpreter) -> Result<()>;
 
+trait ExecuteExt {
+	fn execute(&mut self, stack: &mut Stack<Literal>, variables: &mut HashMap<String, Option<Literal>>,
+			   constants: &mut HashMap<String, Literal>, native_words: &mut HashMap<String, WordFn>,
+			   user_words: &mut HashMap<String, Word>);
+}
+
 pub struct ForthInterpreter {
 	stack: Stack<Literal>,
-	variables: HashMap<Literal, Option<Literal>>,
-	constants: HashMap<Literal, Literal>, // No need in Option cause constant is initialized always
+	variables: HashMap<String, Option<Literal>>,
+	constants: HashMap<String, Literal>, // No need in Option cause constant is initialized always
 
-	words: HashMap<Literal, WordFn>,
+	native_words: HashMap<String, WordFn>,
+	user_words: HashMap<String, Word>,
 }
 
 impl ForthInterpreter {
@@ -45,7 +52,7 @@ impl ForthInterpreter {
 			variables: HashMap::new(),
 			constants: HashMap::new(),
 
-			words: [
+			native_words: [
 				("+".into(), ForthInterpreter::add as WordFn), ("-".into(), ForthInterpreter::sub),
 				("*".into(), ForthInterpreter::mul), ("/".into(), ForthInterpreter::div),
 				("dup".into(), ForthInterpreter::dup), ("drop".into(), ForthInterpreter::drop),
@@ -56,6 +63,7 @@ impl ForthInterpreter {
 				(">".into(), ForthInterpreter::greater_than), ("invert".into(), ForthInterpreter::invert),
 				("and".into(), ForthInterpreter::and), ("or".into(), ForthInterpreter::or)
 			].iter().cloned().collect(),
+			user_words: HashMap::<String, Word>::new(),
 		}
 	}
 	
