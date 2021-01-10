@@ -1,8 +1,8 @@
 use crate::entities::simple::literal::Literal;
-use crate::stack::Stack;
-use crate::Result;
+use crate::entities::complex::{statement::Statement,
+							   expression::Expression};
 
-use crate::parser::Parse;
+use crate::parser::*;
 
 pub enum Definition {
     Variable(Variable),
@@ -10,8 +10,8 @@ pub enum Definition {
     Word(Word),
 }
 
-impl Parser for Definition {
-	fn parse(pair: pest::iterators::Pair<parser::Rule>) -> Self {
+impl Parse for Definition {
+	fn parse(pair: pest::iterators::Pair<Rule>) -> Self {
 		let inner = pair.into_inner().nth(0).unwrap();
 		match inner.as_rule() {
 			Rule::variable_definition => {
@@ -23,19 +23,20 @@ impl Parser for Definition {
 			Rule::word_definition => {
 				Definition::Word(Word::parse(inner))
 			},
+			_ => unreachable!()
 		}
 	}
 }
 
 pub struct Variable {
     name: String,
-    value: Literal,
+    value: Option<Literal>,
 }
 
-impl Parser for Variable {
-    fn parse(pair: pest::iterators::Pair<parser::Rule>) -> Self {
+impl Parse for Variable {
+    fn parse(pair: pest::iterators::Pair<Rule>) -> Self {
     	Self {
-    		name: pair.as_str().into_string(),
+    		name: pair.as_str().to_string(),
     		value: None,
     	}
     }
@@ -46,15 +47,15 @@ pub struct Constant {
     value: Literal,
 }
 
-impl Parser for Constant {
-	fn parse(pair: pest::iterators::Pair<parser::Rule>) -> Self {
+impl Parse for Constant {
+	fn parse(pair: pest::iterators::Pair<Rule>) -> Self {
 		let mut value: Option<Literal> = None;
 		let mut var_name: Option<String> = None;
 
 		for inner_pair in pair.into_inner() {
 			match inner_pair.as_rule() {
 				Rule::ident => {
-					var_name = Some(inner_pair.as_str().into_string());
+					var_name = Some(inner_pair.as_str().to_string());
 				}
 				Rule::literal => {
 					value = Some(inner_pair.as_str().into());
@@ -71,7 +72,7 @@ impl Parser for Constant {
 }
 
 pub enum WordElement {
-	Statment(Statement),
+	Statement(Statement),
 	Expression(Expression),
 }
 
@@ -80,21 +81,21 @@ pub struct Word {
     value: WordElement,
 }
 
-impl Parser for Word {
-	fn parse(pair: pest::iterators::Pair<parser::Rule>) -> Self {
+impl Parse for Word {
+	fn parse(pair: pest::iterators::Pair<Rule>) -> Self {
 		let mut name: Option<String> = None;
 		let mut value: Option<WordElement> = None;
 
 		for inner_pair in pair.into_inner() {
 			match inner_pair.as_rule() {
 				Rule::ident => {
-					name = Some(inner_pair.as_str().into_string());
+					name = Some(inner_pair.as_str().to_string());
 				}
 				Rule::expression => {
-					value = Some(WordElement::Expression::parse(inner_pair));
+					value = Some(WordElement::Expression(Expression::parse(inner_pair)));
 				},
 				Rule::statement => {
-					value = Some(WordElement::Statement::parse(inner_pair));
+					value = Some(WordElement::Statement(Statement::parse(inner_pair)));
 				}
 				_ => unreachable!()	
 			}

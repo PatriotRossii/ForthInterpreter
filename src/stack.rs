@@ -1,4 +1,4 @@
-use cpython::{PyList, Python, ToPyObject, PyString, PyObject, PythonObject};
+use cpython::{PyList, Python, ToPyObject, PyObject, PythonObject};
 
 #[derive(Debug)]
 pub struct Stack<T> {

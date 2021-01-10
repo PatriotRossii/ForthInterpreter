@@ -1,13 +1,13 @@
 use crate::entities::simple::{literal::Literal, ident::Ident};
-use crate::parser::Parser;
+use crate::parser::*;
 
 pub enum ExpressionElement {
     Literal(Literal),
     Ident(Ident),
 }
 
-impl Parser for ExpressionElement {
-	fn parse(pair: pest::iterators::Pair<parser::Rule>) -> Self {
+impl Parse for ExpressionElement {
+	fn parse(pair: pest::iterators::Pair<Rule>) -> Self {
 		match pair.as_rule() {
 			Rule::literal => {
 				ExpressionElement::Literal(Literal::parse(pair))
@@ -15,6 +15,7 @@ impl Parser for ExpressionElement {
 			Rule::ident => {
 				ExpressionElement::Ident(Ident::parse(pair))
 			},
+			_ => unreachable!()
 		}
 	}
 }
@@ -23,9 +24,9 @@ pub struct Expression {
     elements: Vec<ExpressionElement>,
 }
 
-impl Parser for Expression {
-	fn parse(pair: pest::iterators::Pair<parser::Rule>) -> Self {
-		let elements: Vec<ExpressionElement> = vec![];
+impl Parse for Expression {
+	fn parse(pair: pest::iterators::Pair<Rule>) -> Self {
+		let mut elements: Vec<ExpressionElement> = vec![];
 		for inner_pair in pair.into_inner() {
 			match inner_pair.as_rule() {
 				Rule::literal => {
@@ -33,7 +34,8 @@ impl Parser for Expression {
 				},
 				Rule::ident => {
 					elements.push(ExpressionElement::Ident(Ident::parse(inner_pair)));
-				}
+				},
+				_ => unreachable!()
 			}
 		}
 		Self {

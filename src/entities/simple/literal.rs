@@ -1,6 +1,6 @@
 use std::{cmp::Ordering, fmt::{self, Display}};
-use cpython::{PyList, Python, ToPyObject, PyString};
-use crate::parser::Parser;
+use cpython::{Python, ToPyObject, PyString};
+use crate::parser::*;
 
 type Integer = i64;
 type String = std::string::String;
@@ -12,16 +12,17 @@ pub enum Literal {
 	Unknown,
 }
 
-impl Parser for Literal {
-	fn parse(pair: pest::iterators::Pair<parser::Rule>) -> Self {
+impl Parse for Literal {
+	fn parse(pair: pest::iterators::Pair<Rule>) -> Self {
 		let inner = pair.into_inner().nth(0).unwrap();
 		match inner.as_rule() {
 			Rule::integer => {
 				Literal::Integer(inner.as_str().parse::<i64>().unwrap())
 			},
 			Rule::string => {
-				Literal::String(inner.as_str().into_string())
+				Literal::String(inner.as_str().to_string())
 			},
+			_ => unreachable!()
 		}
 	}
 }

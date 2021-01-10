@@ -1,12 +1,11 @@
 use pest::Parser;
-
-trait Parser {
-    fn parse(pair: pest::iterators::Pair<parser::Rule>) -> Self;
-}
-
 #[derive(Parser)]
 #[grammar = "parser/forth.pest"]
 pub struct ForthParser;
+
+pub trait Parse {
+    fn parse(pair: pest::iterators::Pair<Rule>) -> Self;
+}
 
 #[cfg(test)]
 mod tests {
