@@ -13,7 +13,7 @@ pub mod parser;
 use std::collections::{HashMap, hash_map::{Entry}};
 
 use stack::Stack;
-use literal::Literal;
+use entities::simple::literal::Literal;
 use errors::ForthError::{self, StackUnderflow, InvalidOperands, VariableNotExist};
 
 use pest::Parser;
