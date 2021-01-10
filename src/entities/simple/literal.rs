@@ -1,5 +1,6 @@
 use std::{cmp::Ordering, fmt::{self, Display}};
 use cpython::{PyList, Python, ToPyObject, PyString};
+use crate::parser::Parser;
 
 type Integer = i64;
 type String = std::string::String;
@@ -9,6 +10,20 @@ pub enum Literal {
 	Integer(Integer),
 	String(String),
 	Unknown,
+}
+
+impl Parser for Literal {
+	fn parse(pair: pest::iterators::Pair<parser::Rule>) -> Self {
+		let inner = pair.into_inner().nth(0).unwrap();
+		match inner.as_rule() {
+			Rule::integer => {
+				Literal::Integer(inner.as_str().parse::<i64>().unwrap())
+			},
+			Rule::string => {
+				Literal::String(inner.as_str().into_string())
+			},
+		}
+	}
 }
 
 impl Display for Literal {
