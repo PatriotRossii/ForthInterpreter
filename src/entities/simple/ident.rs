@@ -1,4 +1,5 @@
 use crate::parser::*;
+use crate::{ExecuteExt, entities::{simple::literal::Literal}, Result};
 
 pub struct Ident {
 	name: String,
@@ -9,5 +10,39 @@ impl Parse for Ident {
 		Ident {
 			name: pair.as_str().to_string(),
 		}
+	}
+}
+
+impl ToString for Ident {
+	fn to_string(&self) -> String {
+		self.name.to_string()
+	}
+}
+
+impl ExecuteExt for Ident {
+	fn execute(&mut self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
+		let name = &self.name;
+		let variable = interpreter.variables.get(name);
+
+		if let Some(e) = variable {
+			interpreter.push((e as *const Option<Literal> as i64).into());
+		}
+
+		let r#const = interpreter.constants.get(name);
+		if let Some(e) = r#const {
+			interpreter.push(e.clone());
+		}
+
+		let word = interpreter.native_words.get(name);
+		if let Some(e) = word {
+			e(interpreter).unwrap();
+		}
+
+		let word = interpreter.user_words.get(name);
+		if let Some(e) = word {
+			e.execute(interpreter);
+		}
+
+		Ok(())
 	}
 }

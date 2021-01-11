@@ -1,6 +1,9 @@
 use crate::entities::{complex::expression::Expression,
 					  simple::ident::Ident};
+
 use crate::parser::*;
+use crate::{entities::{simple::literal::Literal}, Result, ExecuteExt};
+
 
 pub enum Statement {
     IfThen(IfThenStatement),
@@ -26,6 +29,24 @@ impl Parse for Statement {
 	}
 }
 
+impl ExecuteExt for Statement {
+	fn execute(&mut self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
+		match &mut self {
+			Self::IfThen(stmt) => {
+				stmt.execute(interpreter);
+			},
+			Self::IfElseThen(stmt) => {
+				stmt.execute(interpreter);
+			},
+			Self::DoLoop(stmt) => {
+				stmt.execute(interpreter);
+			}
+		}
+		Ok(())
+	}
+}
+
+
 pub struct IfThenStatement {
 	true_expr: Expression,
 }
@@ -38,6 +59,16 @@ impl Parse for IfThenStatement {
 		}
 	}
 }
+
+impl ExecuteExt for IfThenStatement {
+	fn execute(&mut self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
+			if crate::ForthInterpreter::bool(interpreter.get_last_literal()?) {
+				self.true_expr.execute(interpreter);
+			}
+			Ok(())
+	}
+}
+
 
 pub struct IfElseThenStatement {
 	true_expr: Expression,
@@ -54,6 +85,17 @@ impl Parse for IfElseThenStatement {
 	}
 }
 
+impl ExecuteExt for IfElseThenStatement {
+	fn execute(&mut self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
+			if crate::ForthInterpreter::bool(interpreter.get_last_literal()?) {
+				self.true_expr.execute(interpreter);
+			} else {
+				self.false_expr.execute(interpreter);
+			}
+			Ok(())
+	}
+}
+
 pub struct DoLoopStatement {
 	counter: Ident,
 	expr: Expression,
@@ -66,5 +108,23 @@ impl Parse for DoLoopStatement {
 			counter: Ident::parse(inner.nth(0).unwrap()),
 			expr: Expression::parse(inner.nth(1).unwrap()),
 		}
+	}
+}
+
+impl ExecuteExt for DoLoopStatement {
+	fn execute(&mut self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
+		let (start, stop) = interpreter.get_binary_operands().unwrap();
+		if let Literal::Integer(start) = start {
+			if let Literal::Integer(stop) = stop {
+				for i in start..stop {
+					self.expr.execute(interpreter);
+					interpreter.variables.insert(
+						self.counter.to_string(),
+						Some(Literal::Integer(i))
+					);
+				}
+			}
+		}
+		Ok(())
 	}
 }

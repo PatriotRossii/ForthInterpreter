@@ -1,6 +1,8 @@
 use std::{cmp::Ordering, fmt::{self, Display}};
 use cpython::{Python, ToPyObject, PyString};
+
 use crate::parser::*;
+use crate::{ExecuteExt, Result};
 
 type Integer = i64;
 type String = std::string::String;
@@ -10,6 +12,13 @@ pub enum Literal {
 	Integer(Integer),
 	String(String),
 	Unknown,
+}
+
+impl ExecuteExt for Literal {
+	fn execute(&mut self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
+			interpreter.stack.push(self.clone());
+			Ok(())
+	}
 }
 
 impl Parse for Literal {

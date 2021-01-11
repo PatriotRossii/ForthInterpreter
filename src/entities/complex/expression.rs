@@ -1,6 +1,8 @@
 use crate::entities::simple::{literal::Literal, ident::Ident};
 use crate::parser::*;
 
+use crate::{ExecuteExt, Result};
+
 pub enum ExpressionElement {
     Literal(Literal),
     Ident(Ident),
@@ -19,6 +21,21 @@ impl Parse for ExpressionElement {
 		}
 	}
 }
+
+impl ExecuteExt for ExpressionElement {
+	fn execute(&mut self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
+		match &mut self {
+			Self::Literal(literal) => {
+				literal.execute(interpreter);
+			},
+			Self::Ident(ident) => {
+				ident.execute(interpreter);
+			}
+		}
+		Ok(())
+	}
+}
+
 
 pub struct Expression {
     elements: Vec<ExpressionElement>,
@@ -41,5 +58,14 @@ impl Parse for Expression {
 		Self {
 			elements
 		}
+	}
+}
+
+impl ExecuteExt for Expression {
+	fn execute(&mut self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
+		for element in &self.elements {
+			element.execute(interpreter);
+		}
+		Ok(())
 	}
 }

@@ -13,7 +13,7 @@ pub mod parser;
 use std::{collections::{HashMap, hash_map::{Entry}}, hash::Hash};
 
 use stack::Stack;
-use entities::{simple::literal::Literal, complex::definition::Word};
+use entities::{simple::literal::Literal, complex::definition::WordElement};
 use errors::ForthError::{self, StackUnderflow, InvalidOperands, VariableNotExist};
 
 use pest::Parser;
@@ -30,9 +30,7 @@ macro_rules! ternary {
 type WordFn = fn(&mut ForthInterpreter) -> Result<()>;
 
 trait ExecuteExt {
-	fn execute(&mut self, stack: &mut Stack<Literal>, variables: &mut HashMap<String, Option<Literal>>,
-			   constants: &mut HashMap<String, Literal>, native_words: &mut HashMap<String, WordFn>,
-			   user_words: &mut HashMap<String, Word>);
+	fn execute(&mut self, interpreter: &mut ForthInterpreter) -> Result<()>;
 }
 
 pub struct ForthInterpreter {
@@ -41,7 +39,7 @@ pub struct ForthInterpreter {
 	constants: HashMap<String, Literal>, // No need in Option cause constant is initialized always
 
 	native_words: HashMap<String, WordFn>,
-	user_words: HashMap<String, Word>,
+	user_words: HashMap<String, WordElement>,
 }
 
 impl ForthInterpreter {
@@ -81,7 +79,7 @@ impl ForthInterpreter {
 		&self.stack
 	}
 
-	fn bool(&self, literal: &Literal) -> bool {
+	pub fn bool(literal: &Literal) -> bool {
 		match &literal {
 			&Literal::Integer(i) => {
 				!(*i != -1i64)
