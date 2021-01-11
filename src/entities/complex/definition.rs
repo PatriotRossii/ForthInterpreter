@@ -6,7 +6,7 @@ use crate::entities::complex::{statement::Statement,
 use crate::parser::*;
 use crate::{ExecuteExt, Result};
 
-
+#[derive(Debug, Clone)]
 pub enum Definition {
     Variable(Variable),
     Constant(Constant),
@@ -33,7 +33,7 @@ impl Parse for Definition {
 
 impl ExecuteExt for Definition {
 	fn execute(&mut self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
-		match &mut self {
+		match self {
 			Self::Variable(variable) => {
 				variable.execute(interpreter);
 			},
@@ -48,6 +48,7 @@ impl ExecuteExt for Definition {
 	}
 }
 
+#[derive(Debug, Clone)]
 pub struct Variable {
     name: Ident,
     value: Option<Literal>,
@@ -71,7 +72,7 @@ impl ExecuteExt for Variable {
 		Ok(())
 	}
 }
-
+#[derive(Debug, Clone)]
 pub struct Constant {
     name: Ident,
     value: Literal,
@@ -105,13 +106,13 @@ impl ExecuteExt for Constant {
 	fn execute(&mut self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
 		interpreter.constants.insert(
 			self.name.to_string(),
-			self.value,
+			self.value.clone(),
 		);
 		Ok(())
 	}
 }
 
-
+#[derive(Debug, Clone)]
 pub enum WordElement {
 	Statement(Statement),
 	Expression(Expression),
@@ -119,7 +120,7 @@ pub enum WordElement {
 
 impl ExecuteExt for WordElement {
 	fn execute(&mut self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
-		match &mut self {
+		match self {
 			Self::Statement(stmt) => {
 				stmt.execute(interpreter);
 			},
@@ -131,7 +132,7 @@ impl ExecuteExt for WordElement {
 	}
 }
 
-
+#[derive(Debug, Clone)]
 pub struct Word {
     name: Ident,
     value: WordElement,
@@ -167,7 +168,7 @@ impl ExecuteExt for Word {
 	fn execute(&mut self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
 		interpreter.user_words.insert(
 			self.name.to_string(),
-			self.value
+			self.value.clone()
 		);
 		Ok(())
 	}

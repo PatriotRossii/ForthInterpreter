@@ -5,6 +5,7 @@ use crate::parser::*;
 use crate::{entities::{simple::literal::Literal}, Result, ExecuteExt};
 
 
+#[derive(Debug, Clone)]
 pub enum Statement {
     IfThen(IfThenStatement),
     IfElseThen(IfElseThenStatement),
@@ -31,7 +32,7 @@ impl Parse for Statement {
 
 impl ExecuteExt for Statement {
 	fn execute(&mut self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
-		match &mut self {
+		match self {
 			Self::IfThen(stmt) => {
 				stmt.execute(interpreter);
 			},
@@ -47,6 +48,7 @@ impl ExecuteExt for Statement {
 }
 
 
+#[derive(Debug, Clone)]
 pub struct IfThenStatement {
 	true_expr: Expression,
 }
@@ -70,6 +72,7 @@ impl ExecuteExt for IfThenStatement {
 }
 
 
+#[derive(Debug, Clone)]
 pub struct IfElseThenStatement {
 	true_expr: Expression,
 	false_expr: Expression,
@@ -96,6 +99,7 @@ impl ExecuteExt for IfElseThenStatement {
 	}
 }
 
+#[derive(Debug, Clone)]
 pub struct DoLoopStatement {
 	counter: Ident,
 	expr: Expression,

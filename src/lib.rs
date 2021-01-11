@@ -10,7 +10,7 @@ mod stack;
 mod errors;
 pub mod parser;
 
-use std::{collections::{HashMap, hash_map::{Entry}}, hash::Hash};
+use std::{cell::RefCell, collections::{HashMap, hash_map::{Entry}}, hash::Hash};
 
 use stack::Stack;
 use entities::{simple::literal::Literal, complex::definition::WordElement};
@@ -61,7 +61,7 @@ impl ForthInterpreter {
 				(">".into(), ForthInterpreter::greater_than), ("invert".into(), ForthInterpreter::invert),
 				("and".into(), ForthInterpreter::and), ("or".into(), ForthInterpreter::or)
 			].iter().cloned().collect(),
-			user_words: HashMap::<String, Word>::new(),
+			user_words: HashMap::<String, WordElement>::new(),
 		}
 	}
 	
@@ -227,12 +227,14 @@ impl ForthInterpreter {
 
 	fn variable(&mut self) -> Result<()> {
 		let var_name = self.stack.pop().ok_or(StackUnderflow)?;
-		self.variables.insert(var_name, None);
+		self.variables.insert(var_name.to_string(), None);
 		Ok(())
 	}
 
 	fn store_variable(&mut self) -> Result<()> {
 		let (var_value, var_name) = self.get_binary_operands()?;
+		let var_name = var_name.to_string();
+
 		if  !self.variables.contains_key(&var_name) {
 			return Err(VariableNotExist);
 		}
@@ -241,7 +243,7 @@ impl ForthInterpreter {
 	}
 
 	fn get_variable(&mut self) -> Result<()> {
-		let var_name = self.stack.pop().ok_or(VariableNotExist)?;
+		let var_name = self.stack.pop().ok_or(VariableNotExist)?.to_string();
 		if !self.variables.contains_key(&var_name) {
 			return Err(VariableNotExist);
 		}
@@ -251,189 +253,6 @@ impl ForthInterpreter {
 
 	fn push(&mut self, value: Literal) {
 		self.stack.push(value);
-	}
-
-	fn execute_literal(&mut self, literal: pest::iterators::Pair<parser::Rule>) {
-		for inner_pair in literal.into_inner() {
-			match inner_pair.as_rule() {
-				Rule::integer => { self.push(inner_pair.as_str().parse::<i64>().unwrap().into())}
-				Rule::string => { self.push(String::from(inner_pair.as_str()).into()) }
-				_ => unreachable!()
-			}
-		}
-	}
-
-	fn execute_ident(&mut self, ident: pest::iterators::Pair<parser::Rule>) {
-		for inner_pair in ident.into_inner() {
-			let name = inner_pair.as_str();
-
-			let variable = self.variables.get(&name.into());
-			if let Some(e) = variable {
-				return self.push((e as *const Option<Literal> as i64).into());
-			}
-
-			let r#const = self.constants.get(&name.into());
-			if let Some(e) = r#const {
-				return self.push(e.clone());
-			}
-
-			let word = self.words.get(&name.into());
-			if let Some(e) = word {
-				return e(self).unwrap();
-			}
-
-			panic!("Invalid ident");
-		}
-	}
-
-	fn execute_expression(&mut self, expr: pest::iterators::Pair<parser::Rule>) {
-		for inner_pair in expr.into_inner() {
-			match inner_pair.as_rule() {
-				Rule::literal => { self.execute_literal(inner_pair); },
-				Rule::ident => { self.execute_ident(inner_pair); },
-				_ => unreachable!()
-			}
-		}
-	}
-
-	fn execute_variable_definition(&mut self, var_def: pest::iterators::Pair<parser::Rule>) {
-		for inner_pair in var_def.into_inner() {
-			match inner_pair.as_rule() {
-				Rule::ident => {
-					self.variables.insert(inner_pair.as_str().into(), None);
-				},
-				_ => unreachable!()
-			}
-		}
-	}
-
-	fn execute_constant_definition(&mut self, const_def: pest::iterators::Pair<parser::Rule>) {
-		let mut value: Option<Literal> = None;
-		let mut var_name: Option<Literal> = None;
-
-		for inner_pair in const_def.into_inner() {
-			match inner_pair.as_rule() {
-				Rule::ident => {
-					var_name = Some(inner_pair.as_str().into());
-				}
-				Rule::literal => {
-					value = Some(inner_pair.as_str().into());
-				}
-				_ => unreachable!()
-			}
-		}
-		self.constants.insert(var_name.unwrap(), value.unwrap());
-	}
-
-	fn execute_if_then_statement(&mut self, stmt: pest::iterators::Pair<parser::Rule>) {
-		let condition = self.bool(self.get_last_literal().unwrap());
-		if condition {
-			let pair = stmt.into_inner().nth(0).unwrap();
-			match pair.as_rule() {
-				Rule::expression => { self.execute_expression(pair) },
-				_ => unreachable!()
-			}
-		}
-	}
-
-	fn execute_if_else_then_statement(&mut self, stmt: pest::iterators::Pair<parser::Rule>) {
-		let condition = self.bool(self.get_last_literal().unwrap());
-		let pair = {
-			if condition {
-				stmt.into_inner().nth(0).unwrap()
-			} else {
-				stmt.into_inner().nth(1).unwrap()
-			}
-		};
-		match pair.as_rule() {
-			Rule::expression => { self.execute_expression(pair) },
-			_ => unreachable!()
-		}
-	}
-
-	fn execute_do_loop(&mut self, stmt: pest::iterators::Pair<parser::Rule>) {
-		let (start, stop) = self.get_binary_operands().unwrap();
-		let expr = stmt.into_inner().nth(0).unwrap();
-
-		if let Literal::Integer(start) = start {
-			if let Literal::Integer(stop) = stop {
-				for _ in start..stop {
-					self.execute_expression(expr.clone());
-				}
-			}
-		}
-	}
-
-	fn execute_statement(&mut self, statement: pest::iterators::Pair<parser::Rule>) {
-		for inner_pair in statement.into_inner() {
-			match inner_pair.as_rule() {
-				Rule::if_then_statement => {
-					self.execute_if_then_statement(inner_pair);
-				},
-				Rule::if_else_then_statement => {
-					self.execute_if_else_then_statement(inner_pair);
-				},
-				Rule::do_loop => {
-					self.execute_do_loop(inner_pair);
-				},
-				_ => unreachable!(),
-			}
-		}
-	}
-
-	fn execute_word_definition(&mut self, word_def: pest::iterators::Pair<parser::Rule>) {
-		let mut name: Option<Literal> = None;
-		let mut value: Option<pest::iterators::Pair<parser::Rule>> = None;
-
-		for inner_pair in word_def.into_inner() {
-			match inner_pair.as_rule() {
-				Rule::ident => {
-					name = Some(inner_pair.as_str().into());
-				}
-				Rule::expression => {
-					value = Some(inner_pair);
-				},
-				Rule::statement => {
-					value = Some(inner_pair);
-				}
-				_ => unreachable!()	
-			}
-		}
-		todo!();
-	}
-
-	fn execute_definition(&mut self, def: pest::iterators::Pair<parser::Rule>) {
-		for inner_pair in def.into_inner() {
-			match inner_pair.as_rule() {
-				Rule::variable_definition => {
-					self.execute_variable_definition(inner_pair);
-				},
-				Rule::constant_definition => {
-					self.execute_constant_definition(inner_pair);
-				},
-				Rule::word_definition => {
-					self.execute_word_definition(inner_pair);
-				},
-				_ => unreachable!()
-			}
-		}
-	}
-
-	pub fn execute_line(&mut self, line: &str) {
-		let pairs = ForthParser::parse(Rule::line, line).unwrap();
-		for pair in pairs {
-			for inner_pair in pair.into_inner() {
-				match inner_pair.as_rule() {
-					Rule::expression => {
-						self.execute_expression(inner_pair);
-					}
-					Rule::definition => {
-						self.execute_definition(inner_pair);
-					}
-					_ => unreachable!()
-				}
-			}		
-		}
 	}
 }
 
@@ -454,6 +273,6 @@ mod tests {
 		use crate::ForthInterpreter;
 		
 		let mut forth: ForthInterpreter = ForthInterpreter::new();
-		forth.execute_line("a b +")
+		//forth.execute_line("a b +")
 	}
 }

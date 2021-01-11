@@ -1,6 +1,7 @@
 use crate::parser::*;
 use crate::{ExecuteExt, entities::{simple::literal::Literal}, Result};
 
+#[derive(Debug, Clone)]
 pub struct Ident {
 	name: String,
 }
@@ -38,9 +39,9 @@ impl ExecuteExt for Ident {
 			e(interpreter).unwrap();
 		}
 
-		let word = interpreter.user_words.get(name);
+		let word = interpreter.user_words.get_mut(name);
 		if let Some(e) = word {
-			e.execute(interpreter);
+			e.clone().execute(interpreter).unwrap();
 		}
 
 		Ok(())
