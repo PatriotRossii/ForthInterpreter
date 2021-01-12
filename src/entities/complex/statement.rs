@@ -34,13 +34,13 @@ impl ExecuteExt for Statement {
 	fn execute(&mut self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
 		match self {
 			Self::IfThen(stmt) => {
-				stmt.execute(interpreter);
+				stmt.execute(interpreter)?;
 			},
 			Self::IfElseThen(stmt) => {
-				stmt.execute(interpreter);
+				stmt.execute(interpreter)?;
 			},
 			Self::DoLoop(stmt) => {
-				stmt.execute(interpreter);
+				stmt.execute(interpreter)?;
 			}
 		}
 		Ok(())
@@ -65,7 +65,7 @@ impl Parse for IfThenStatement {
 impl ExecuteExt for IfThenStatement {
 	fn execute(&mut self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
 			if crate::ForthInterpreter::bool(interpreter.get_last_literal()?) {
-				self.true_expr.execute(interpreter);
+				self.true_expr.execute(interpreter)?;
 			}
 			Ok(())
 	}
@@ -91,9 +91,9 @@ impl Parse for IfElseThenStatement {
 impl ExecuteExt for IfElseThenStatement {
 	fn execute(&mut self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
 			if crate::ForthInterpreter::bool(interpreter.get_last_literal()?) {
-				self.true_expr.execute(interpreter);
+				self.true_expr.execute(interpreter)?;
 			} else {
-				self.false_expr.execute(interpreter);
+				self.false_expr.execute(interpreter)?;
 			}
 			Ok(())
 	}
@@ -121,7 +121,7 @@ impl ExecuteExt for DoLoopStatement {
 		if let Literal::Integer(start) = start {
 			if let Literal::Integer(stop) = stop {
 				for i in start..stop {
-					self.expr.execute(interpreter);
+					self.expr.execute(interpreter)?;
 					interpreter.variables.insert(
 						self.counter.to_string(),
 						Some(Literal::Integer(i))

@@ -35,13 +35,16 @@ impl ExecuteExt for Definition {
 	fn execute(&mut self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
 		match self {
 			Self::Variable(variable) => {
-				variable.execute(interpreter);
+				variable.execute(interpreter)?;
 			},
 			Self::Constant(constant) => {
-				constant.execute(interpreter);
+				constant.execute(interpreter)?;
 			},
 			Self::Word(word) => {
-				word.execute(interpreter);
+				word.execute(interpreter)?;
+			},
+			Self::StoreVariable(action) => {
+				action.execute(interpreter)?;
 			}
 		}
 		Ok(())
@@ -56,8 +59,9 @@ pub struct Variable {
 
 impl Parse for Variable {
     fn parse(pair: pest::iterators::Pair<Rule>) -> Self {
+		let name = pair.into_inner().nth(0).unwrap();
     	Self {
-    		name: Ident::parse(pair),
+    		name: Ident::parse(name),
     		value: None,
     	}
     }
@@ -122,10 +126,10 @@ impl ExecuteExt for WordElement {
 	fn execute(&mut self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
 		match self {
 			Self::Statement(stmt) => {
-				stmt.execute(interpreter);
+				stmt.execute(interpreter)?;
 			},
 			Self::Expression(expr) => {
-				expr.execute(interpreter);
+				expr.execute(interpreter)?;
 			},
 		}
 		Ok(())

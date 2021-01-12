@@ -79,6 +79,22 @@ impl ForthInterpreter {
 		&self.stack
 	}
 
+	pub fn get_vars_dump(&self) -> &HashMap<String, Option<Literal>> {
+		&self.variables
+	}
+
+	pub fn get_consts_dump(&self) -> &HashMap<String, Literal> {
+		&self.constants
+	}
+
+	pub fn get_native_words_dump(&self) -> &HashMap<String, WordFn> {
+		&self.native_words
+	}
+
+	pub fn get_user_words_dump(&self) -> &HashMap<String, WordElement> {
+		&self.user_words
+	}
+
 	pub fn bool(literal: &Literal) -> bool {
 		match &literal {
 			&Literal::Integer(i) => {
@@ -248,6 +264,15 @@ impl ForthInterpreter {
 			return Err(VariableNotExist);
 		}
 		self.stack.push(self.variables[&var_name].clone().unwrap());
+		Ok(())
+	}
+
+	pub fn execute_line(&mut self, line: &str) -> Result<()> {
+		let line_pair = ForthParser::parse(Rule::line, line).unwrap();
+		let mut line = entities::Line::parse(line_pair.peek().unwrap());
+
+		line.execute(self)?;
+
 		Ok(())
 	}
 

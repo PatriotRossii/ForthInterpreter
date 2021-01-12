@@ -1,12 +1,12 @@
 pub mod simple;
 pub mod complex;
 
-use simple::literal::Literal;
 use complex::{definition::Definition, expression::Expression};
 
-use crate::parser::*;
+use crate::{ExecuteExt, ForthInterpreter, Result, parser::*};
 
-enum Line {
+#[derive(Debug, Clone)]
+pub enum Line {
     Definition(Definition),
     Expression(Expression),
 }
@@ -24,5 +24,19 @@ impl Parse for Line {
 			},
 			_ => unreachable!()
 		}
+	}
+}
+
+impl ExecuteExt for Line {
+	fn execute(&mut self, interpreter: &mut ForthInterpreter) -> Result<()> {
+		match self {
+			Self::Definition(e) => {
+				e.execute(interpreter)?
+			},
+			Self::Expression(e) => {
+				e.execute(interpreter)?
+			}
+		}
+		Ok(())
 	}
 }

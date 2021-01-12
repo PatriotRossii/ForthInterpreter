@@ -47,3 +47,11 @@ impl<T: ToPyObject + Clone> ToPyObject for Stack<T> {
 		PyList::new(py, self.stack.clone().into_iter().map(|e| e.to_py_object(py).into_object()).collect::<Vec<PyObject>>().as_slice())
 	}
 }
+
+impl<T: Clone> From<Vec<T>> for Stack<T> {
+	fn from(value: Vec<T>) -> Stack<T> {
+		Self {
+			stack: value
+		}
+	}
+}

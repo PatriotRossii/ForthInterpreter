@@ -36,12 +36,12 @@ impl ExecuteExt for Ident {
 
 		let word = interpreter.native_words.get(name);
 		if let Some(e) = word {
-			e(interpreter).unwrap();
+			e(interpreter)?;
 		}
 
 		let word = interpreter.user_words.get_mut(name);
 		if let Some(e) = word {
-			e.clone().execute(interpreter).unwrap();
+			e.clone().execute(interpreter)?;
 		}
 
 		Ok(())
