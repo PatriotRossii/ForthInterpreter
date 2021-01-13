@@ -4,13 +4,15 @@ use cpython::{Python, ToPyObject, PyString};
 use crate::parser::*;
 use crate::{ExecuteExt, Result};
 
-type Integer = i64;
-type String = std::string::String;
+type PointerType = u64;
+type IntegerType = i64;
+type StringType = std::string::String;
 
 #[derive(Debug, Clone, Eq, Hash)]
 pub enum Literal {
-	Integer(Integer),
-	String(String),
+	Pointer(PointerType),
+	Integer(IntegerType),
+	String(StringType),
 	Unknown,
 }
 
@@ -45,6 +47,9 @@ impl Display for Literal {
 			&Literal::String(s) => {
 				write!(f, "{}", s)
 			}
+			&Literal::Pointer(i) => {
+				write!(f, "{}", i)
+			}
 			&Literal::Unknown => {
 				write!(f, "")
 			},
@@ -57,6 +62,13 @@ impl PartialEq for Literal {
 		match &self {
 			&Literal::Integer(i) => {
 				if let &Literal::Integer(j) = other {
+					*i == j
+				} else {
+					false
+				}
+			},
+			&Literal::Pointer(i) => {
+				if let &Literal::Pointer(j) = other {
 					*i == j
 				} else {
 					false
@@ -90,6 +102,13 @@ impl PartialOrd for Literal {
 					None
 				}
 			},
+			&Literal::Pointer(i) => {
+				if let &Literal::Pointer(j) = other {
+					i.partial_cmp(&j)
+				} else {
+					None
+				}
+			}
 			&Literal::String(s) => {
 				if let Literal::String(os) = other {
 					s.partial_cmp(&os)
