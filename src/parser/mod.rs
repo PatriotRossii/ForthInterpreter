@@ -1,4 +1,5 @@
 use pest::Parser;
+
 #[derive(Parser)]
 #[grammar = "parser/forth.pest"]
 pub struct ForthParser;

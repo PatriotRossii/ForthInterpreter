@@ -10,7 +10,7 @@ use crate::{ExecuteExt, Result};
 pub enum Definition {
     Variable(Variable),
     Constant(Constant),
-    Word(Word),
+	Word(Word),
 }
 
 impl Parse for Definition {
@@ -43,9 +43,6 @@ impl ExecuteExt for Definition {
 			Self::Word(word) => {
 				word.execute(interpreter)?;
 			},
-			Self::StoreVariable(action) => {
-				action.execute(interpreter)?;
-			}
 		}
 		Ok(())
 	}
@@ -68,10 +65,9 @@ impl Parse for Variable {
 }
 
 impl ExecuteExt for Variable {
-	fn execute(&mut self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
-		interpreter.variables.insert(
-			self.name.to_string(),
-			None,
+	fn execute(&mut self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {		
+		interpreter.variables.push(
+			crate::Variable { name: self.name.to_string(), value: None }
 		);
 		Ok(())
 	}

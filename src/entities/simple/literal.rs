@@ -4,7 +4,7 @@ use cpython::{Python, ToPyObject, PyString};
 use crate::parser::*;
 use crate::{ExecuteExt, Result};
 
-type PointerType = u64;
+type PointerType = usize;
 type IntegerType = i64;
 type StringType = std::string::String;
 

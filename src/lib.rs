@@ -1,4 +1,5 @@
 #![feature(assoc_char_funcs)]
+#![feature(hash_raw_entry)]
 
 extern crate pest;
 #[macro_use]
@@ -33,9 +34,18 @@ trait ExecuteExt {
 	fn execute(&mut self, interpreter: &mut ForthInterpreter) -> Result<()>;
 }
 
+#[derive(Debug, Clone)]
+pub struct Variable { 
+	name: String,
+	value: Option<Literal>,
+}
+
 pub struct ForthInterpreter {
 	stack: Stack<Literal>,
-	variables: HashMap<String, Option<Literal>>,
+	
+	hasher: std::collections::hash_map::DefaultHasher,
+
+	variables: Vec<Variable>,
 	constants: HashMap<String, Literal>, // No need in Option cause constant is initialized always
 
 	native_words: HashMap<String, WordFn>,
@@ -43,11 +53,13 @@ pub struct ForthInterpreter {
 }
 
 impl ForthInterpreter {
-	pub fn new() -> Self {
-		let words: HashMap<i32, i32> = [(1, 2), (1, 2), (2, 3)].iter().cloned().collect();
+	pub fn new() -> Self {		
 		Self {
 			stack: Stack::new(),
-			variables: HashMap::new(),
+			variables: Vec::new(),
+
+			hasher: std::collections::hash_map::DefaultHasher::new(),
+
 			constants: HashMap::new(),
 
 			native_words: [
@@ -59,7 +71,7 @@ impl ForthInterpreter {
 				("emit".into(), ForthInterpreter::emit), ("cr".into(), ForthInterpreter::cr),
 				("=".into(), ForthInterpreter::equal), ("<".into(), ForthInterpreter::less_than),
 				(">".into(), ForthInterpreter::greater_than), ("invert".into(), ForthInterpreter::invert),
-				("and".into(), ForthInterpreter::and), ("or".into(), ForthInterpreter::or)
+				("and".into(), ForthInterpreter::and), ("or".into(), ForthInterpreter::or), ("!".into(), ForthInterpreter::store_variable)
 			].iter().cloned().collect(),
 			user_words: HashMap::<String, WordElement>::new(),
 		}
@@ -79,7 +91,7 @@ impl ForthInterpreter {
 		&self.stack
 	}
 
-	pub fn get_vars_dump(&self) -> &HashMap<String, Option<Literal>> {
+	pub fn get_vars_dump(&self) -> &Vec<Variable> {
 		&self.variables
 	}
 
@@ -243,27 +255,45 @@ impl ForthInterpreter {
 
 	fn variable(&mut self) -> Result<()> {
 		let var_name = self.stack.pop().ok_or(StackUnderflow)?;
-		self.variables.insert(var_name.to_string(), None);
+		self.variables.push(Variable { name: var_name.to_string(), value: None});
 		Ok(())
 	}
 
+	fn set_variable(&mut self, name: String, value: Literal) -> Result<()> {
+		let variable = self.variables.iter_mut().find(|var| var.name == name);
+		match variable {
+			None => {
+				self.variables.push(
+					Variable {
+						name: name.clone(),
+						value: Some(value)
+					}
+				)
+			}
+			Some(e) => {
+				e.value = Some(value);
+			}
+		}
+		Ok(())
+	}
+
+	fn contains_variable(&self, name: &String) -> bool {
+		if let None = self.variables.iter().find(|var| &var.name == name) {
+			false
+		} else {
+			true
+		}
+	}
+
+	fn get_variable_id(&self, name: &String) -> Option<usize> {
+		self.variables.iter().position(|var| &var.name == name)
+	}
+	
 	fn store_variable(&mut self) -> Result<()> {
-		let (var_value, var_name) = self.get_binary_operands()?;
-		let var_name = var_name.to_string();
-
-		if  !self.variables.contains_key(&var_name) {
-			return Err(VariableNotExist);
+		let (var_value, var_index) = self.get_binary_operands()?;
+		if let Literal::Pointer(idx) = var_index {
+			self.variables[idx].value = Some(var_value);
 		}
-		self.variables.insert(var_name, Some(var_value));
-		Ok(())
-	}
-
-	fn get_variable(&mut self) -> Result<()> {
-		let var_name = self.stack.pop().ok_or(VariableNotExist)?.to_string();
-		if !self.variables.contains_key(&var_name) {
-			return Err(VariableNotExist);
-		}
-		self.stack.push(self.variables[&var_name].clone().unwrap());
 		Ok(())
 	}
 
@@ -283,11 +313,11 @@ impl ForthInterpreter {
 
 #[cfg(test)]
 mod tests {
+	use crate::ForthInterpreter;
+	use crate::Literal;
+
 	#[test]
 	fn test_interpreter() {
-		use crate::ForthInterpreter;
-		use crate::Literal;
-
 		let mut forth: ForthInterpreter = ForthInterpreter::new();
 		forth.push(Literal::Integer(5));
 		forth.push(Literal::Integer(5));
@@ -295,9 +325,23 @@ mod tests {
 
 	#[test]
 	fn test_parsing() {
-		use crate::ForthInterpreter;
 		
 		let mut forth: ForthInterpreter = ForthInterpreter::new();
 		//forth.execute_line("a b +")
 	}
+
+	#[test]
+	fn test_variable() {
+		let mut interpreter = ForthInterpreter::new();
+    
+		interpreter.execute_line("variable user_var").unwrap();
+		interpreter.execute_line("123 user_var !").unwrap();
+
+		let value = interpreter.get_last_literal().unwrap();
+		if let Literal::Integer(i) = value {
+			println!("{:?}", unsafe { (*i as *const Option<Literal>).as_ref() });
+		}
+
+	}
+
 }

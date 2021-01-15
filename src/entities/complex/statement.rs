@@ -122,9 +122,9 @@ impl ExecuteExt for DoLoopStatement {
 			if let Literal::Integer(stop) = stop {
 				for i in start..stop {
 					self.expr.execute(interpreter)?;
-					interpreter.variables.insert(
+					interpreter.set_variable(
 						self.counter.to_string(),
-						Some(Literal::Integer(i))
+						Literal::Integer(i)
 					);
 				}
 			}

@@ -23,25 +23,24 @@ impl ToString for Ident {
 impl ExecuteExt for Ident {
 	fn execute(&mut self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
 		let name = &self.name;
-		let variable = interpreter.variables.get(name);
 
-		if let Some(e) = variable {
-			interpreter.push((e as *const Option<Literal> as i64).into());
+		if interpreter.contains_variable(name) {
+			interpreter.push(Literal::Pointer(interpreter.get_variable_id(name).unwrap()));
 		}
 
-		let r#const = interpreter.constants.get(name);
-		if let Some(e) = r#const {
-			interpreter.push(e.clone());
+		if interpreter.constants.contains_key(name) {
+			let r#const = interpreter.constants.get(name).unwrap();
+			interpreter.push(r#const.clone());
 		}
 
-		let word = interpreter.native_words.get(name);
-		if let Some(e) = word {
-			e(interpreter)?;
+		if interpreter.native_words.contains_key(name) {
+			let word = interpreter.native_words.get(name).unwrap();
+			word(interpreter)?;
 		}
 
-		let word = interpreter.user_words.get_mut(name);
-		if let Some(e) = word {
-			e.clone().execute(interpreter)?;
+		if interpreter.user_words.contains_key(name) {
+			let word = interpreter.user_words.get_mut(name).unwrap();
+			word.clone().execute(interpreter)?;
 		}
 
 		Ok(())
