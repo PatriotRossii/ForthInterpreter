@@ -90,9 +90,15 @@ pub trait StackWords {
 pub trait OtherWords {
     fn store_variable(&mut self) -> Result<()>;
 
+    fn cells(&mut self) -> Result<()>;
+    fn allot(&mut self) -> Result<()>;
+
     fn get_words() -> Vec<(String, crate::WordFn)> {
         vec![
             ("!".into(), OtherWords::store_variable as crate::WordFn),
+            
+            ("cells".into(), OtherWords::cells as crate::WordFn),
+            ("allot".into(), OtherWords::allot as crate::WordFn),
         ]
     }
 }

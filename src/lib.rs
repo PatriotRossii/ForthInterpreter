@@ -37,6 +37,8 @@ trait ExecuteExt {
 	fn execute(&mut self, interpreter: &mut ForthInterpreter) -> Result<()>;
 }
 
+const CELL_SIZE: i64 = 1;
+
 #[derive(Debug, Clone)]
 pub struct Variable { 
 	name: String,
@@ -260,8 +262,39 @@ impl OtherWords for crate::ForthInterpreter {
 	fn store_variable(&mut self) -> Result<()> {
 		let (var_value, var_index) = self.get_binary_operands()?;
 		if let Literal::Pointer(idx) = var_index {
-			self.variables[idx].value = Some(var_value);
+			let variable = self.variables.get_mut(idx).unwrap();
+			match variable {
+				Literal::Pointer(ptr) => {
+					unimplemented!()
+				}
+				_ => {
+					variable.value = Some(var_value);
+				}
+			}
 		}
+		Ok(())
+	}
+
+	fn cells(&mut self) -> Result<()> {
+		let a = self.get_unary_operand()?;
+		if let Literal::Integer(a) = a {
+			self.interpreter.push(Literal::Pointer(a * CELL_SIZE));
+		}
+		Ok(())
+	}
+
+	fn allot(&mut self) -> Result<()> {
+		let (count_of_elements, cell_width) = self.get_binary_operands()?;
+		
+		if cell_width != 1 {
+			unimplemented!()
+		}
+		
+		let array = Vec::<Literal>::with_capacity(count_of_elements * cell_width);
+		self.interpreter.push(
+			Literal::Array(array)
+		);
+		
 		Ok(())
 	}
 }
