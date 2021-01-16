@@ -20,6 +20,12 @@ pub trait MathWords {
     fn sub(&mut self) -> Result<()>;
     fn mul(&mut self) -> Result<()>;
     fn div(&mut self) -> Result<()>;
+    fn r#mod(&mut self) -> Result<()>;
+
+    fn negate(&mut self) -> Result<()>;
+    fn abs(&mut self) -> Result<()>;
+    fn max(&mut self) -> Result<()>;
+    fn min(&mut self) -> Result<()>;
 
     fn get_words() -> Vec<(String, crate::WordFn)> {
         vec![
@@ -27,6 +33,12 @@ pub trait MathWords {
             ("-".into(), MathWords::sub as crate::WordFn),
             ("*".into(), MathWords::mul as crate::WordFn),
             ("/".into(), MathWords::div as crate::WordFn),
+            ("mod".into(), MathWords::r#mod as crate::WordFn),
+            
+            ("negate".into(), MathWords::negate as crate::WordFn),
+            ("abs".into(), MathWords::abs as crate::WordFn),
+            ("max".into(), MathWords::max as crate::WordFn),
+            ("min".into(), MathWords::min as crate::WordFn),
         ]
     }
 }

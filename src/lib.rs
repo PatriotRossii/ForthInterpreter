@@ -96,7 +96,58 @@ impl MathWords for crate::ForthInterpreter {
             }
     	}
         Err(InvalidOperands)
-    }
+	}
+	
+	fn r#mod(&mut self) -> Result<()> {
+		let (a, b) = self.get_binary_operands()?;
+		if let Literal::Integer(a) = a {
+			if let Literal::Integer(b) = b {
+				self.push(Literal::Integer(a % b));
+				Ok(())
+			}
+		}
+		Err(InvalidOperands)
+	}
+
+    fn negate(&mut self) -> Result<()> {
+		let a = self.get_unary_operand()?;
+		if let Literal::Integer(a) = a {
+			self.push(Literal::Integer(-a));
+			Ok(())
+		}
+		Err(InvalidOperands)
+	}
+
+    fn abs(&mut self) -> Result<()> {
+		let a = self.get_unary_operand()?;
+		if let Literal::Integer(a) = a {
+			self.push(Literal::Integer(a.abs()));
+			Ok(())
+		}
+		Err(InvalidOperands)
+	}
+
+    fn max(&mut self) -> Result<()> {
+		let (a, b) = self.get_binary_operands()?;
+		if let Literal::Integer(a) = a {
+			if let Literal::Integer(b) = b {
+				self.push(Literal::Integer(a.max(b)));
+				Ok(())
+			}
+		}
+		Err(InvalidOperands)
+	}
+
+    fn min(&mut self) -> Result<()> {
+		let (a, b) = self.get_binary_operands()?;
+		if let Literal::Integer(a) = a {
+			if let Literal::Integer(b) = b {
+				self.push(Literal::Integer(a.min(b)));
+				Ok(())
+			}
+		}
+		Err(InvalidOperands)
+	}
 }
 
 impl IOWords for crate::ForthInterpreter {
