@@ -10,6 +10,7 @@ mod entities;
 mod stack;
 mod errors;
 pub mod parser;
+pub mod words;
 
 use std::{collections::HashMap};
 
