@@ -8,11 +8,16 @@ type PointerType = usize;
 type IntegerType = i64;
 type StringType = std::string::String;
 
+type ArrayType = Vec<Literal>;
+
 #[derive(Debug, Clone, Eq, Hash)]
 pub enum Literal {
 	Pointer(PointerType),
 	Integer(IntegerType),
 	String(StringType),
+
+	Array(ArrayType),
+
 	Unknown,
 }
 
@@ -50,6 +55,9 @@ impl Display for Literal {
 			&Literal::Pointer(i) => {
 				write!(f, "{}", i)
 			}
+			&Literal::Array(vec) => {
+				write!(f, "{:?}", vec)
+			}
 			&Literal::Unknown => {
 				write!(f, "")
 			},
@@ -77,6 +85,13 @@ impl PartialEq for Literal {
 			&Literal::String(s) => {
 				if let Literal::String(os) = other {
 					s == os
+				} else {
+					false
+				}
+			}
+			&Literal::Array(arr) => {
+				if let Literal::Array(oa) = other {
+					arr == oa
 				} else {
 					false
 				}
@@ -112,6 +127,13 @@ impl PartialOrd for Literal {
 			&Literal::String(s) => {
 				if let Literal::String(os) = other {
 					s.partial_cmp(&os)
+				} else {
+					None
+				}
+			}
+			&Literal::Array(arr) => {
+				if let Literal::Array(oarr) = other {
+					arr.partial_cmp(&oarr)
 				} else {
 					None
 				}
