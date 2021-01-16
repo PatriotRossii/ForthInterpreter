@@ -55,76 +55,162 @@ pub struct ForthInterpreter {
 
 impl MathWords for crate::ForthInterpreter {
     fn add(&mut self) -> Result<()> {
-        Ok(())
-    }
+		let (a, b) = self.get_binary_operands()?;
+		if let Literal::Integer(a) = a {
+			if let Literal::Integer(b) = b {
+				self.push(Literal::Integer(a + b));
+				Ok(())
+			}
+		}
+		Err(InvalidOperands)
+	}
+
     fn sub(&mut self) -> Result<()> {
-        Ok(())
-    }
+		let (a, b) = self.get_binary_operands()?;
+		if let Literal::Integer(a) = a {
+			if let Literal::Integer(b) = b {
+				self.push(Literal::Integer(a - b));
+				Ok(())
+			}
+		}
+		Err(InvalidOperands)
+	}
+
     fn mul(&mut self) -> Result<()> {
-        Ok(())
-    }
+        let (a, b) = self.get_binary_operands()?;
+        if let Literal::Integer(a) = a {
+            if let Literal::Integer(b) = b {
+                self.push(Literal::Integer(a * b));
+                return Ok(()) 
+            }
+        }
+        Err(InvalidOperands)
+	}
+	
     fn div(&mut self) -> Result<()> {
-        Ok(())
+        let (a, b) = self.get_binary_operands()?;
+        if let Literal::Integer(a) = a {
+            if let Literal::Integer(b) = b {
+                self.push(Literal::Integer(a / b));
+                return Ok(()) 
+            }
+    	}
+        Err(InvalidOperands)
     }
 }
 
 impl IOWords for crate::ForthInterpreter {
     fn print_top(&mut self) -> Result<()> {
+		print!("{}", *self.stack.last().ok_or(StackUnderflow)?);
 		Ok(())
 	}
+
 	fn emit(&mut self) -> Result<()> {
+		let last = self.stack.last().ok_or(StackUnderflow)?;
+		if let &Literal::Integer(i) = last {
+			print!("{}", char::from_u32(i as u32).ok_or(InvalidOperands)?);
+		}
 		Ok(())
 	}
+
     fn cr(&mut self) -> Result<()> {
+		print!("\n");
 		Ok(())
 	}
 }
 
 impl LogicWords for crate::ForthInterpreter {
     fn equal(&mut self) -> Result<()> {
+		let (a, b) = self.get_binary_operands()?;
+		self.stack.push(Literal::Integer(ternary!(a == b, -1, 0)));
 		Ok(())
 	}
+
     fn greater(&mut self) -> Result<()> {
+		let (a, b) = self.get_binary_operands()?;
+		self.stack.push(Literal::Integer(ternary!(a > b, -1, 0)));
 		Ok(())
 	}
+
     fn less(&mut self) -> Result<()> {
+		let (a, b) = self.get_binary_operands()?;
+		self.stack.push(Literal::Integer(ternary!(a < b, -1, 0)));
 		Ok(())
 	}
+
     fn not(&mut self) -> Result<()> {
+		let a = self.stack.pop().ok_or(StackUnderflow)?;
+		self.stack.push(Literal::Integer(ternary!(a == 0.into(), -1, 0)));
 		Ok(())
 	}
+	
     fn and(&mut self) -> Result<()> {
+		let (a, b) = self.get_binary_operands()?;
+		self.stack.push(Literal::Integer(ternary!(a != 0.into() && b != 0.into(), -1, 0)));
 		Ok(())
 	}
+
     fn or(&mut self) -> Result<()> {
+		let (a, b) = self.get_binary_operands()?;
+		self.stack.push(Literal::Integer(ternary!(a != 0.into() || b != 0.into(), -1, 0)));
 		Ok(())
 	}
 }
 
 impl StackWords for crate::ForthInterpreter {
     fn dup(&mut self) -> Result<()> {
-		Ok(())
-	}
-    fn drop(&mut self) -> Result<()> {
-		Ok(())
-	}
-    fn swap(&mut self) -> Result<()> {
-		Ok(())
-	}
-    fn over(&mut self) -> Result<()> {
-		Ok(())
-	}
-    fn rot(&mut self) -> Result<()> {
+		self.push(self.get_last_literal()?.clone());
 		Ok(())
 	}
 
-    fn fetch_variable(&mut self) -> Result<()> {
+    fn drop(&mut self) -> Result<()> {
+		self.stack.pop().ok_or(StackUnderflow)?;
 		Ok(())
+	}
+
+    fn swap(&mut self) -> Result<()> {
+		let (a, b) = self.get_binary_operands()?;
+		self.push(b);
+		self.push(a);
+		Ok(())
+	}
+	
+    fn over(&mut self) -> Result<()> {
+		let length = self.stack.length();
+		if length >= 2 {
+			self.push((*self.stack.get(length - 2)).clone());
+			return Ok(())
+		}
+		Err(StackUnderflow)
+	}
+	
+    fn rot(&mut self) -> Result<()> {
+		let length = self.stack.length();
+		if length >= 3 {
+			let element = self.stack.remove(length - 3);
+			self.stack.push(element);
+			return Ok(())
+		}
+		Err(StackUnderflow)
+	}
+
+    fn fetch_variable(&mut self) -> Result<()> {
+		let length = self.stack.length();
+		if length >= 3 {
+			let element = self.stack.remove(length - 3);
+			self.stack.push(element);
+			return Ok(())
+		}
+		Err(StackUnderflow)
 	}
 }
 
 impl OtherWords for crate::ForthInterpreter {
 	fn store_variable(&mut self) -> Result<()> {
+		let (var_value, var_index) = self.get_binary_operands()?;
+		if let Literal::Pointer(idx) = var_index {
+			self.variables[idx].value = Some(var_value);
+		}
 		Ok(())
 	}
 }
@@ -189,146 +275,6 @@ impl ForthInterpreter {
 		}
 	}
 
-	fn add(&mut self) -> Result<()> {
-		let (a, b) = self.get_binary_operands()?;
-		if let Literal::Integer(a) = a {
-			if let Literal::Integer(b) = b {
-				self.push(Literal::Integer(a + b));
-				return Ok(())
-			}
-		}
-		Err(InvalidOperands)
-	}
-
-	fn sub(&mut self) -> Result<()> {
-		let (a, b) = self.get_binary_operands()?;
-		if let Literal::Integer(a) = a {
-			if let Literal::Integer(b) = b {
-				self.push(Literal::Integer(a - b));
-				return Ok(())
-			}
-		}
-		Err(InvalidOperands)
-	}
-
-    fn mul(&mut self) -> Result<()> {
-        let (a, b) = self.get_binary_operands()?;
-        if let Literal::Integer(a) = a {
-            if let Literal::Integer(b) = b {
-                self.push(Literal::Integer(a * b));
-                return Ok(()) 
-            }
-        }
-        Err(InvalidOperands)
-    }
-
-	fn div(&mut self) -> Result<()> {
-        let (a, b) = self.get_binary_operands()?;
-        if let Literal::Integer(a) = a {
-            if let Literal::Integer(b) = b {
-                self.push(Literal::Integer(a / b));
-                return Ok(()) 
-            }
-    	}
-        Err(InvalidOperands)
-    }
-
-	fn dup(&mut self) -> Result<()> {
-		self.push(self.get_last_literal()?.clone());
-		Ok(())
-	}
-
-	fn drop(&mut self) -> Result<()> {
-		self.stack.pop().ok_or(StackUnderflow)?;
-		Ok(())
-	}
-
-	fn swap(&mut self) -> Result<()> {
-		let (a, b) = self.get_binary_operands()?;
-		self.push(b);
-		self.push(a);
-		Ok(())
-	}
-
-	fn over(&mut self) -> Result<()> {
-		let length = self.stack.length();
-		if length >= 2 {
-			self.push((*self.stack.get(length - 2)).clone());
-			return Ok(())
-		}
-		Err(StackUnderflow)
-	}
-
-	fn rot(&mut self) -> Result<()> {
-		let length = self.stack.length();
-		if length >= 3 {
-			let element = self.stack.remove(length - 3);
-			self.stack.push(element);
-			return Ok(())
-		}
-		Err(StackUnderflow)
-	}
-
-	fn print_top(&mut self) -> Result<()> {
-		print!("{}", *self.stack.last().ok_or(StackUnderflow)?);
-		Ok(())
-	}
-
-	fn emit(&mut self) -> Result<()> {
-		let last = self.stack.last().ok_or(StackUnderflow)?;
-		if let &Literal::Integer(i) = last {
-			print!("{}", char::from_u32(i as u32).ok_or(InvalidOperands)?);
-		}
-		Ok(())
-	}
-
-	fn cr(&mut self) -> Result<()> {
-		print!("\n");
-		Ok(())
-	}
-
-	fn equal(&mut self) -> Result<()> {
-		let (a, b) = self.get_binary_operands()?;
-		self.stack.push(Literal::Integer(ternary!(a == b, -1, 0)));
-		Ok(())
-	}
-
-	fn less_than(&mut self) -> Result<()> {
-		let (a, b) = self.get_binary_operands()?;
-		self.stack.push(Literal::Integer(ternary!(a < b, -1, 0)));
-		Ok(())
-	}
-
-	fn greater_than(&mut self) -> Result<()> {
-		let (a, b) = self.get_binary_operands()?;
-		self.stack.push(Literal::Integer(ternary!(a > b, -1, 0)));
-		Ok(())
-	}
-
-	fn and(&mut self) -> Result<()> {
-		let (a, b) = self.get_binary_operands()?;
-		self.stack.push(Literal::Integer(ternary!(a != 0.into() && b != 0.into(), -1, 0)));
-		Ok(())
-	}
-
-	fn or(&mut self) -> Result<()> {
-		let (a, b) = self.get_binary_operands()?;
-		self.stack.push(Literal::Integer(ternary!(a != 0.into() || b != 0.into(), -1, 0)));
-		Ok(())
-	}
-	
-	fn invert(&mut self) -> Result<()> {
-		let a = self.stack.pop().ok_or(StackUnderflow)?;
-		self.stack.push(Literal::Integer(ternary!(a == 0.into(), -1, 0)));
-		Ok(())
-	}
-
-	fn variable(&mut self) -> Result<()> {
-		let var_name = self.stack.pop().ok_or(StackUnderflow)?;
-		self.variables.push(Variable { name: var_name.to_string(), value: None});
-		Ok(())
-	}
-
 	fn set_variable(&mut self, name: String, value: Literal) -> Result<()> {
 		let variable = self.variables.iter_mut().find(|var| var.name == name);
 		match variable {
@@ -359,22 +305,6 @@ impl ForthInterpreter {
 		self.variables.iter().position(|var| &var.name == name)
 	}
 	
-	fn store_variable(&mut self) -> Result<()> {
-		let (var_value, var_index) = self.get_binary_operands()?;
-		if let Literal::Pointer(idx) = var_index {
-			self.variables[idx].value = Some(var_value);
-		}
-		Ok(())
-	}
-
-	fn fetch_variable(&mut self) -> Result<()> {
-		let var_index = self.get_unary_operand()?;
-		if let Literal::Pointer(idx) = var_index {
-			self.push(self.variables[idx].value.as_ref().unwrap_or(&0i64.into()).clone());
-		}
-		Ok(())
-	}
-
 	pub fn execute_line(&mut self, line: &str) -> Result<()> {
 		let line_pair = ForthParser::parse(Rule::line, line).unwrap();
 		let mut line = entities::Line::parse(line_pair.peek().unwrap());
