@@ -19,7 +19,9 @@ use entities::{simple::literal::Literal, complex::definition::WordElement};
 use errors::ForthError::{self, StackUnderflow, InvalidOperands};
 
 use pest::Parser;
+
 use parser::*;
+use words::*;
 
 type Result<T> = std::result::Result<T, ForthError>;
 
@@ -51,6 +53,84 @@ pub struct ForthInterpreter {
 	user_words: HashMap<String, WordElement>,
 }
 
+impl MathWords for crate::ForthInterpreter {
+    fn add(&mut self) -> Result<()> {
+        Ok(())
+    }
+    fn sub(&mut self) -> Result<()> {
+        Ok(())
+    }
+    fn mul(&mut self) -> Result<()> {
+        Ok(())
+    }
+    fn div(&mut self) -> Result<()> {
+        Ok(())
+    }
+}
+
+impl IOWords for crate::ForthInterpreter {
+    fn print_top(&mut self) -> Result<()> {
+		Ok(())
+	}
+	fn emit(&mut self) -> Result<()> {
+		Ok(())
+	}
+    fn cr(&mut self) -> Result<()> {
+		Ok(())
+	}
+}
+
+impl LogicWords for crate::ForthInterpreter {
+    fn equal(&mut self) -> Result<()> {
+		Ok(())
+	}
+    fn greater(&mut self) -> Result<()> {
+		Ok(())
+	}
+    fn less(&mut self) -> Result<()> {
+		Ok(())
+	}
+    fn not(&mut self) -> Result<()> {
+		Ok(())
+	}
+    fn and(&mut self) -> Result<()> {
+		Ok(())
+	}
+    fn or(&mut self) -> Result<()> {
+		Ok(())
+	}
+}
+
+impl StackWords for crate::ForthInterpreter {
+    fn dup(&mut self) -> Result<()> {
+		Ok(())
+	}
+    fn drop(&mut self) -> Result<()> {
+		Ok(())
+	}
+    fn swap(&mut self) -> Result<()> {
+		Ok(())
+	}
+    fn over(&mut self) -> Result<()> {
+		Ok(())
+	}
+    fn rot(&mut self) -> Result<()> {
+		Ok(())
+	}
+
+    fn fetch_variable(&mut self) -> Result<()> {
+		Ok(())
+	}
+}
+
+impl OtherWords for crate::ForthInterpreter {
+	fn store_variable(&mut self) -> Result<()> {
+		Ok(())
+	}
+}
+
+impl StandardWords for ForthInterpreter {}
+
 impl ForthInterpreter {
 	pub fn new() -> Self {		
 		Self {
@@ -58,18 +138,7 @@ impl ForthInterpreter {
 			variables: Vec::new(),
 			constants: HashMap::new(),
 
-			native_words: [
-				("+".into(), ForthInterpreter::add as WordFn), ("-".into(), ForthInterpreter::sub),
-				("*".into(), ForthInterpreter::mul), ("/".into(), ForthInterpreter::div),
-				("dup".into(), ForthInterpreter::dup), ("drop".into(), ForthInterpreter::drop),
-				("swap".into(), ForthInterpreter::swap), ("over".into(), ForthInterpreter::over),
-				("rot".into(), ForthInterpreter::rot), (".".into(), ForthInterpreter::print_top),
-				("emit".into(), ForthInterpreter::emit), ("cr".into(), ForthInterpreter::cr),
-				("=".into(), ForthInterpreter::equal), ("<".into(), ForthInterpreter::less_than),
-				(">".into(), ForthInterpreter::greater_than), ("invert".into(), ForthInterpreter::invert),
-				("and".into(), ForthInterpreter::and), ("or".into(), ForthInterpreter::or),
-				("!".into(), ForthInterpreter::store_variable), ("@".into(), ForthInterpreter::fetch_variable),
-			].iter().cloned().collect(),
+			native_words: <Self as StandardWords>::get_words(),
 			user_words: HashMap::<String, WordElement>::new(),
 		}
 	}
