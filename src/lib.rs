@@ -11,11 +11,11 @@ mod stack;
 mod errors;
 pub mod parser;
 
-use std::{cell::RefCell, collections::{HashMap, hash_map::{Entry}}, hash::Hash};
+use std::{collections::HashMap};
 
 use stack::Stack;
 use entities::{simple::literal::Literal, complex::definition::WordElement};
-use errors::ForthError::{self, StackUnderflow, InvalidOperands, VariableNotExist};
+use errors::ForthError::{self, StackUnderflow, InvalidOperands};
 
 use pest::Parser;
 use parser::*;
@@ -43,8 +43,6 @@ pub struct Variable {
 pub struct ForthInterpreter {
 	stack: Stack<Literal>,
 	
-	hasher: std::collections::hash_map::DefaultHasher,
-
 	variables: Vec<Variable>,
 	constants: HashMap<String, Literal>, // No need in Option cause constant is initialized always
 
@@ -57,9 +55,6 @@ impl ForthInterpreter {
 		Self {
 			stack: Stack::new(),
 			variables: Vec::new(),
-
-			hasher: std::collections::hash_map::DefaultHasher::new(),
-
 			constants: HashMap::new(),
 
 			native_words: [
@@ -71,12 +66,17 @@ impl ForthInterpreter {
 				("emit".into(), ForthInterpreter::emit), ("cr".into(), ForthInterpreter::cr),
 				("=".into(), ForthInterpreter::equal), ("<".into(), ForthInterpreter::less_than),
 				(">".into(), ForthInterpreter::greater_than), ("invert".into(), ForthInterpreter::invert),
-				("and".into(), ForthInterpreter::and), ("or".into(), ForthInterpreter::or), ("!".into(), ForthInterpreter::store_variable)
+				("and".into(), ForthInterpreter::and), ("or".into(), ForthInterpreter::or),
+				("!".into(), ForthInterpreter::store_variable), ("@".into(), ForthInterpreter::fetch_variable),
 			].iter().cloned().collect(),
 			user_words: HashMap::<String, WordElement>::new(),
 		}
 	}
 	
+	fn get_unary_operand(&mut self) -> Result<Literal> {
+		Ok(self.stack.pop().ok_or(StackUnderflow)?)
+	}
+
 	fn get_binary_operands(&mut self) -> Result<(Literal, Literal)> {
 		let b: Literal = self.stack.pop().ok_or(StackUnderflow)?;
 		let a: Literal = self.stack.pop().ok_or(StackUnderflow)?;
@@ -293,6 +293,14 @@ impl ForthInterpreter {
 		let (var_value, var_index) = self.get_binary_operands()?;
 		if let Literal::Pointer(idx) = var_index {
 			self.variables[idx].value = Some(var_value);
+		}
+		Ok(())
+	}
+
+	fn fetch_variable(&mut self) -> Result<()> {
+		let var_index = self.get_unary_operand()?;
+		if let Literal::Pointer(idx) = var_index {
+			self.push(self.variables[idx].value.as_ref().unwrap_or(&0i64.into()).clone());
 		}
 		Ok(())
 	}

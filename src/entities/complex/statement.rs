@@ -125,7 +125,7 @@ impl ExecuteExt for DoLoopStatement {
 					interpreter.set_variable(
 						self.counter.to_string(),
 						Literal::Integer(i)
-					);
+					)?;
 				}
 			}
 		}

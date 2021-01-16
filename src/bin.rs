@@ -5,6 +5,7 @@ fn main() {
     
     interpreter.execute_line("variable user_var").unwrap();
     interpreter.execute_line("123 user_var !").unwrap();
+    interpreter.execute_line("user_var @").unwrap();
     
-    println!("{:?}", interpreter.get_vars_dump());
+    println!("{:?}", interpreter.get_stack_dump());
 }

@@ -10,7 +10,7 @@ integer = @{ ("+" | "-")? ~ ASCII_DIGIT+ }
 string = @{ "\"" ~ LETTER* ~ "\""}
 literal = { integer | string }
 
-native_ident = @{ "+" | "-" | "*" | "/" | ">" | "<" | "=" | "!" }
+native_ident = @{ "+" | "-" | "*" | "/" | ">" | "<" | "=" | "!" | "@" }
 user_ident = @{ !ASCII_DIGIT ~ (ASCII_ALPHANUMERIC ~ "_"?)+ }
 
 ident = {native_ident | user_ident}
