@@ -4,7 +4,13 @@ use cpython::{Python, ToPyObject, PyString};
 use crate::parser::*;
 use crate::{ExecuteExt, Result};
 
-type PointerType = usize;
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub struct Pointer {
+	address: usize,
+	offset: usize,
+}
+
+type PointerType = Pointer;
 type IntegerType = i64;
 type StringType = std::string::String;
 
@@ -53,7 +59,7 @@ impl Display for Literal {
 				write!(f, "{}", s)
 			}
 			&Literal::Pointer(i) => {
-				write!(f, "{}", i)
+				write!(f, "{:?}", i)
 			}
 			&Literal::Array(vec) => {
 				write!(f, "{:?}", vec)

@@ -25,7 +25,12 @@ impl ExecuteExt for Ident {
 		let name = &self.name;
 
 		if interpreter.contains_variable(name) {
-			interpreter.push(Literal::Pointer(interpreter.get_variable_id(name).unwrap()));
+			interpreter.push(Literal::Pointer(
+				Pointer {
+					address: interpreter.get_variable_id(name).unwrap(),
+					offset: 0
+				}
+			));
 		}
 
 		if interpreter.constants.contains_key(name) {

@@ -58,11 +58,27 @@ pub struct ForthInterpreter {
 impl MathWords for crate::ForthInterpreter {
     fn add(&mut self) -> Result<()> {
 		let (a, b) = self.get_binary_operands()?;
-		if let Literal::Integer(a) = a {
-			if let Literal::Integer(b) = b {
-				self.push(Literal::Integer(a + b));
-				return Ok(());
+		match a {
+			Literal::Integer(a) => {
+				if let Literal::Integer(b) = b {
+					self.push((a + b).into());
+					return Ok(())
+				}
+			},
+			Literal::Pointer(a) => {
+				if let Literal::Integer(offset) = b {
+					self.push(
+						Literal::Pointer(
+							Pointer {
+								..a,
+								offset: a.offset + offset
+							}
+						)
+					);
+					Ok(())
+				}
 			}
+			_ => {}
 		}
 		Err(InvalidOperands)
 	}
@@ -248,25 +264,31 @@ impl StackWords for crate::ForthInterpreter {
 	}
 
     fn fetch_variable(&mut self) -> Result<()> {
-		let length = self.stack.length();
-		if length >= 3 {
-			let element = self.stack.remove(length - 3);
-			self.stack.push(element);
-			return Ok(())
+		let var_index = self.get_unary_operand()?;
+		if let Literal::Pointer(idx) = var_index {
+			if idx.offset != 0 {
+				self.push(self.variables[idx].value[idx.offset].as_ref().unwrap_or(&0i64.into()).clone());
+			} else {
+				self.push(self.variables[idx].value.as_ref().unwrap_or(&0i64.into()).clone());
+			}
 		}
-		Err(StackUnderflow)
+		Ok(())
 	}
 }
 
 impl OtherWords for crate::ForthInterpreter {
 	fn store_variable(&mut self) -> Result<()> {
 		let (var_value, var_index) = self.get_binary_operands()?;
-		if let Literal::Pointer(idx) = var_index {
-			let variable = self.variables.get_mut(idx).unwrap();
+		if let Literal::Pointer(ptr) = var_index {
+			let address = ptr.address;
+			let offset = ptr.offset;
+
+			let variable = self.variables.get_mut(address).unwrap();
 			let var_value = variable.value.unwrap();
+
 			match var_value {
-				Literal::Pointer(ptr) => {
-					unimplemented!()
+				Literal::Array(_) => {
+					variable.value[offset] = var_value;
 				}
 				_ => {
 					variable.value = Some(var_value);
