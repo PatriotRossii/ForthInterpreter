@@ -12,7 +12,7 @@ mod errors;
 pub mod parser;
 pub mod words;
 
-use std::{collections::HashMap};
+use std::{collections::HashMap, convert::TryInto};
 
 use stack::Stack;
 use entities::{simple::literal::Literal, complex::definition::WordElement};
@@ -61,7 +61,7 @@ impl MathWords for crate::ForthInterpreter {
 		if let Literal::Integer(a) = a {
 			if let Literal::Integer(b) = b {
 				self.push(Literal::Integer(a + b));
-				Ok(())
+				return Ok(());
 			}
 		}
 		Err(InvalidOperands)
@@ -72,7 +72,7 @@ impl MathWords for crate::ForthInterpreter {
 		if let Literal::Integer(a) = a {
 			if let Literal::Integer(b) = b {
 				self.push(Literal::Integer(a - b));
-				Ok(())
+				return Ok(());
 			}
 		}
 		Err(InvalidOperands)
@@ -83,7 +83,7 @@ impl MathWords for crate::ForthInterpreter {
         if let Literal::Integer(a) = a {
             if let Literal::Integer(b) = b {
                 self.push(Literal::Integer(a * b));
-                return Ok(()) 
+                return Ok(());
             }
         }
         Err(InvalidOperands)
@@ -94,7 +94,7 @@ impl MathWords for crate::ForthInterpreter {
         if let Literal::Integer(a) = a {
             if let Literal::Integer(b) = b {
                 self.push(Literal::Integer(a / b));
-                return Ok(()) 
+                return Ok(());
             }
     	}
         Err(InvalidOperands)
@@ -105,7 +105,7 @@ impl MathWords for crate::ForthInterpreter {
 		if let Literal::Integer(a) = a {
 			if let Literal::Integer(b) = b {
 				self.push(Literal::Integer(a % b));
-				Ok(())
+				return Ok(());
 			}
 		}
 		Err(InvalidOperands)
@@ -115,7 +115,7 @@ impl MathWords for crate::ForthInterpreter {
 		let a = self.get_unary_operand()?;
 		if let Literal::Integer(a) = a {
 			self.push(Literal::Integer(-a));
-			Ok(())
+			return Ok(());
 		}
 		Err(InvalidOperands)
 	}
@@ -124,7 +124,7 @@ impl MathWords for crate::ForthInterpreter {
 		let a = self.get_unary_operand()?;
 		if let Literal::Integer(a) = a {
 			self.push(Literal::Integer(a.abs()));
-			Ok(())
+			return Ok(());
 		}
 		Err(InvalidOperands)
 	}
@@ -134,7 +134,7 @@ impl MathWords for crate::ForthInterpreter {
 		if let Literal::Integer(a) = a {
 			if let Literal::Integer(b) = b {
 				self.push(Literal::Integer(a.max(b)));
-				Ok(())
+				return Ok(());
 			}
 		}
 		Err(InvalidOperands)
@@ -145,7 +145,7 @@ impl MathWords for crate::ForthInterpreter {
 		if let Literal::Integer(a) = a {
 			if let Literal::Integer(b) = b {
 				self.push(Literal::Integer(a.min(b)));
-				Ok(())
+				return Ok(());
 			}
 		}
 		Err(InvalidOperands)
@@ -263,7 +263,8 @@ impl OtherWords for crate::ForthInterpreter {
 		let (var_value, var_index) = self.get_binary_operands()?;
 		if let Literal::Pointer(idx) = var_index {
 			let variable = self.variables.get_mut(idx).unwrap();
-			match variable {
+			let var_value = variable.value.unwrap();
+			match var_value {
 				Literal::Pointer(ptr) => {
 					unimplemented!()
 				}
@@ -278,7 +279,7 @@ impl OtherWords for crate::ForthInterpreter {
 	fn cells(&mut self) -> Result<()> {
 		let a = self.get_unary_operand()?;
 		if let Literal::Integer(a) = a {
-			self.interpreter.push(Literal::Pointer(a * CELL_SIZE));
+			self.push(Literal::Pointer((a * CELL_SIZE).try_into().unwrap()));
 		}
 		Ok(())
 	}
@@ -286,15 +287,19 @@ impl OtherWords for crate::ForthInterpreter {
 	fn allot(&mut self) -> Result<()> {
 		let (count_of_elements, cell_width) = self.get_binary_operands()?;
 		
-		if cell_width != 1 {
-			unimplemented!()
+		if let Literal::Integer(cell_width) = cell_width {
+			if cell_width != 1 {
+				unimplemented!()
+			}
+			if let Literal::Integer(count_of_elements) = count_of_elements {
+				let array = Vec::<Literal>::with_capacity(
+					(count_of_elements * cell_width).try_into().unwrap()
+				);
+				self.push(
+					Literal::Array(array)
+				);
+			}
 		}
-		
-		let array = Vec::<Literal>::with_capacity(count_of_elements * cell_width);
-		self.interpreter.push(
-			Literal::Array(array)
-		);
-		
 		Ok(())
 	}
 }
