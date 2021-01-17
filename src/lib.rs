@@ -23,6 +23,8 @@ use pest::Parser;
 use parser::*;
 use words::*;
 
+use console::Term;
+
 type Result<T> = std::result::Result<T, ForthError>;
 
 macro_rules! ternary {
@@ -48,6 +50,8 @@ pub struct Variable {
 pub struct ForthInterpreter {
 	stack: Stack<Literal>,
 	
+	terminal: console::Term,
+
 	variables: Vec<Variable>,
 	constants: HashMap<String, Literal>, // No need in Option cause constant is initialized always
 
@@ -184,6 +188,28 @@ impl IOWords for crate::ForthInterpreter {
 
     fn cr(&mut self) -> Result<()> {
 		print!("\n");
+		Ok(())
+	}
+
+	fn key(&mut self) -> Result<()> {
+		if let Ok(ch) = self.terminal.read_char() {
+			self.push(Literal::Integer(ch as i64));
+		}
+		Ok(())
+	}
+
+	fn word(&mut self) -> Result<()> {
+		let (storage, del_code) = self.get_binary_operands()?;
+		if let Literal::Integer(code) = operand {
+			let delimiter = char::from_u32(code as u32).unwrap();
+			if let Literal::Pointer(ptr) = storage {
+				todo!("CHECK IF PTR DIRECTS TO AN ARRAY");
+				while let Ok(ch) = self.terminal.read_char() && ch != delimiter {
+					self.variables[ptr.address].push(char);
+					todo!("OUT OF BOUNDS CHECK!");
+				}	
+			}
+		}
 		Ok(())
 	}
 }
@@ -334,6 +360,8 @@ impl ForthInterpreter {
 			stack: Stack::new(),
 			variables: Vec::new(),
 			constants: HashMap::new(),
+
+			terminal: Term::stdout(),
 
 			native_words: <Self as StandardWords>::get_words(),
 			user_words: HashMap::<String, WordElement>::new(),

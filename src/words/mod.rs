@@ -6,11 +6,16 @@ pub trait IOWords {
     fn emit(&mut self) -> Result<()>;
     fn cr(&mut self) -> Result<()>;
 
+    fn key(&mut self) -> Result<()>;
+    fn word(&mut self) -> Result<()>;
+
     fn get_words() -> Vec<(String, crate::WordFn)> {
         vec![
             (".".into(), IOWords::print_top as crate::WordFn),
             ("emit".into(), IOWords::emit as crate::WordFn),
             ("cr".into(), IOWords::cr as crate::WordFn),
+            ("key".into(), IOWords::key as crate::WordFn),
+            ("word".into(), IOWords::word as crate::WordFn),
         ]
     }
 }
