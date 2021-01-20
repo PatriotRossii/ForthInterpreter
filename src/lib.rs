@@ -15,7 +15,7 @@ pub mod words;
 use std::{collections::HashMap, convert::TryInto};
 
 use stack::Stack;
-use entities::{simple::literal::Literal, complex::definition::WordElement};
+use entities::{simple::literal::{Literal, Pointer}, complex::definition::WordElement};
 use errors::ForthError::{self, StackUnderflow, InvalidOperands};
 
 use pest::Parser;
@@ -47,6 +47,12 @@ pub struct Variable {
 	value: Option<Literal>,
 }
 
+impl Variable {
+	fn get_mut(&mut self) -> Option<&mut Literal> {
+		(&mut self.value).as_mut()
+	}
+}
+
 pub struct ForthInterpreter {
 	stack: Stack<Literal>,
 	
@@ -74,12 +80,12 @@ impl MathWords for crate::ForthInterpreter {
 					self.push(
 						Literal::Pointer(
 							Pointer {
-								..a,
-								offset: a.offset + offset
+								offset: a.offset + offset as usize,
+								..a
 							}
 						)
 					);
-					Ok(())
+					return Ok(())
 				}
 			}
 			_ => {}
@@ -200,14 +206,18 @@ impl IOWords for crate::ForthInterpreter {
 
 	fn word(&mut self) -> Result<()> {
 		let (storage, del_code) = self.get_binary_operands()?;
-		if let Literal::Integer(code) = operand {
+		if let Literal::Integer(code) = del_code {
 			let delimiter = char::from_u32(code as u32).unwrap();
 			if let Literal::Pointer(ptr) = storage {
-				todo!("CHECK IF PTR DIRECTS TO AN ARRAY");
-				while let Ok(ch) = self.terminal.read_char() && ch != delimiter {
-					self.variables[ptr.address].push(char);
-					todo!("OUT OF BOUNDS CHECK!");
-				}	
+				let pointer_storage = self.variables[ptr.address].get_mut().unwrap();
+				if let Literal::Array(arr) = pointer_storage {
+					while let Ok(ch) = self.terminal.read_char() {
+						if ch != delimiter {
+							arr.push(Literal::Integer(ch as i64));
+							todo!("OUT OF BOUNDS CHECK!");
+						}
+					}	
+				}
 			}
 		}
 		Ok(())
@@ -293,9 +303,11 @@ impl StackWords for crate::ForthInterpreter {
 		let var_index = self.get_unary_operand()?;
 		if let Literal::Pointer(idx) = var_index {
 			if idx.offset != 0 {
-				self.push(self.variables[idx].value[idx.offset].as_ref().unwrap_or(&0i64.into()).clone());
+				if let Literal::Array(arr) = self.variables[idx.address].value.as_ref().unwrap_or(&0i64.into()) {
+					self.push(arr[idx.offset].clone());
+				}
 			} else {
-				self.push(self.variables[idx].value.as_ref().unwrap_or(&0i64.into()).clone());
+				self.push(self.variables[idx.address].value.as_ref().unwrap_or(&0i64.into()).clone());
 			}
 		}
 		Ok(())
@@ -310,11 +322,11 @@ impl OtherWords for crate::ForthInterpreter {
 			let offset = ptr.offset;
 
 			let variable = self.variables.get_mut(address).unwrap();
-			let var_value = variable.value.unwrap();
+			let var_storage = variable.get_mut().unwrap();
 
-			match var_value {
-				Literal::Array(_) => {
-					variable.value[offset] = var_value;
+			match var_storage {
+				Literal::Array(arr) => {
+					arr[offset] = var_value;
 				}
 				_ => {
 					variable.value = Some(var_value);
@@ -327,7 +339,7 @@ impl OtherWords for crate::ForthInterpreter {
 	fn cells(&mut self) -> Result<()> {
 		let a = self.get_unary_operand()?;
 		if let Literal::Integer(a) = a {
-			self.push(Literal::Pointer((a * CELL_SIZE).try_into().unwrap()));
+			self.push(Literal::Pointer(Pointer::new((a * CELL_SIZE) as usize, 0)));
 		}
 		Ok(())
 	}

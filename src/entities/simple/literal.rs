@@ -4,10 +4,19 @@ use cpython::{Python, ToPyObject, PyString};
 use crate::parser::*;
 use crate::{ExecuteExt, Result};
 
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialOrd, PartialEq, Eq, Hash)]
 pub struct Pointer {
-	address: usize,
-	offset: usize,
+	pub address: usize,
+	pub offset: usize,
+}
+
+impl Pointer {
+	pub fn new(address: usize, offset: usize) -> Self {
+		Self {
+			address,
+			offset
+		}
+	}
 }
 
 type PointerType = Pointer;
@@ -82,8 +91,8 @@ impl PartialEq for Literal {
 				}
 			},
 			&Literal::Pointer(i) => {
-				if let &Literal::Pointer(j) = other {
-					*i == j
+				if let Literal::Pointer(j) = other {
+					i == j
 				} else {
 					false
 				}
@@ -124,7 +133,7 @@ impl PartialOrd for Literal {
 				}
 			},
 			&Literal::Pointer(i) => {
-				if let &Literal::Pointer(j) = other {
+				if let Literal::Pointer(j) = other {
 					i.partial_cmp(&j)
 				} else {
 					None

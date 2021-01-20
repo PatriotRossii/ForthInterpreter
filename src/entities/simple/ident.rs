@@ -1,5 +1,5 @@
 use crate::parser::*;
-use crate::{ExecuteExt, entities::{simple::literal::Literal}, Result};
+use crate::{ExecuteExt, entities::{simple::literal::{Literal, Pointer}}, Result};
 
 #[derive(Debug, Clone)]
 pub struct Ident {
