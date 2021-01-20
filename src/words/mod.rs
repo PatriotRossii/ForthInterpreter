@@ -39,7 +39,6 @@ pub trait MathWords {
             ("*".into(), MathWords::mul as crate::WordFn),
             ("/".into(), MathWords::div as crate::WordFn),
             ("mod".into(), MathWords::r#mod as crate::WordFn),
-            
             ("negate".into(), MathWords::negate as crate::WordFn),
             ("abs".into(), MathWords::abs as crate::WordFn),
             ("max".into(), MathWords::max as crate::WordFn),
@@ -62,7 +61,6 @@ pub trait LogicWords {
             ("=".into(), LogicWords::equal as crate::WordFn),
             (">".into(), LogicWords::greater as crate::WordFn),
             ("<".into(), LogicWords::less as crate::WordFn),
-
             ("!".into(), LogicWords::not as crate::WordFn),
             ("and".into(), LogicWords::and as crate::WordFn),
             ("or".into(), LogicWords::or as crate::WordFn),
@@ -70,7 +68,7 @@ pub trait LogicWords {
     }
 }
 
-pub trait StackWords { 
+pub trait StackWords {
     fn dup(&mut self) -> Result<()>;
     fn drop(&mut self) -> Result<()>;
     fn swap(&mut self) -> Result<()>;
@@ -84,7 +82,6 @@ pub trait StackWords {
             ("dup".into(), StackWords::dup as crate::WordFn),
             ("drop".into(), StackWords::drop as crate::WordFn),
             ("swap".into(), StackWords::swap as crate::WordFn),
-
             ("over".into(), StackWords::over as crate::WordFn),
             ("rot".into(), StackWords::rot as crate::WordFn),
             ("@".into(), StackWords::fetch_variable as crate::WordFn),
@@ -101,24 +98,24 @@ pub trait OtherWords {
     fn get_words() -> Vec<(String, crate::WordFn)> {
         vec![
             ("!".into(), OtherWords::store_variable as crate::WordFn),
-            
             ("cells".into(), OtherWords::cells as crate::WordFn),
             ("allot".into(), OtherWords::allot as crate::WordFn),
         ]
     }
 }
 
-
-pub trait StandardWords where Self: IOWords + MathWords + LogicWords + StackWords + OtherWords {
+pub trait StandardWords
+where
+    Self: IOWords + MathWords + LogicWords + StackWords + OtherWords,
+{
     fn get_words() -> HashMap<String, crate::WordFn> {
-        <Self as IOWords>::get_words().iter().chain(
-            <Self as MathWords>::get_words().iter()
-        ).chain(
-          <Self as LogicWords>::get_words().iter()  
-        ).chain(
-            <Self as StackWords>::get_words().iter()
-        ).chain(
-            <Self as OtherWords>::get_words().iter()
-        ).cloned().collect()
+        <Self as IOWords>::get_words()
+            .iter()
+            .chain(<Self as MathWords>::get_words().iter())
+            .chain(<Self as LogicWords>::get_words().iter())
+            .chain(<Self as StackWords>::get_words().iter())
+            .chain(<Self as OtherWords>::get_words().iter())
+            .cloned()
+            .collect()
     }
 }

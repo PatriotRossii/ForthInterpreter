@@ -1,10 +1,11 @@
-use cpython::{PyResult, PyList, NoArgs, Python, py_module_initializer, py_fn, ToPyObject};
+use cpython::{py_fn, py_module_initializer, NoArgs, PyList, PyResult, Python, ToPyObject};
 use forth_interpreter::ForthInterpreter;
 
-use std::{sync::Mutex};
-use once_cell::sync::{Lazy};
+use once_cell::sync::Lazy;
+use std::sync::Mutex;
 
-static INTERPRETER: Lazy<Mutex<ForthInterpreter>> = Lazy::new(|| Mutex::new(ForthInterpreter::new()));
+static INTERPRETER: Lazy<Mutex<ForthInterpreter>> =
+    Lazy::new(|| Mutex::new(ForthInterpreter::new()));
 
 py_module_initializer!(py_forth, |py, m| {
     m.add(py, "__doc__", "This module is implemented in Rust.")?;
@@ -19,5 +20,9 @@ fn execute_line(_: Python, line: &str) -> PyResult<NoArgs> {
 }
 
 fn dump_stack(py: Python) -> PyResult<PyList> {
-    Ok(INTERPRETER.lock().unwrap().get_stack_dump().to_py_object(py))
+    Ok(INTERPRETER
+        .lock()
+        .unwrap()
+        .get_stack_dump()
+        .to_py_object(py))
 }

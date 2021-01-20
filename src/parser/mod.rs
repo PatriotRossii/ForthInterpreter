@@ -10,10 +10,10 @@ pub trait Parse {
 
 #[cfg(test)]
 mod tests {
-    use super::*;        
+    use super::*;
 
     #[test]
-    fn test_parse_comment() {        
+    fn test_parse_comment() {
         ForthParser::parse(Rule::COMMENT, "(hi)").unwrap();
         ForthParser::parse(Rule::COMMENT, "(h\ni)").unwrap_err();
         ForthParser::parse(Rule::COMMENT, "(hi").unwrap_err();
@@ -54,7 +54,5 @@ mod tests {
         ForthParser::parse(Rule::expression, "2 5 *").unwrap();
         ForthParser::parse(Rule::expression, "foo").unwrap();
         ForthParser::parse(Rule::expression, "1 2 3 dup").unwrap();
-
     }
-
 }
