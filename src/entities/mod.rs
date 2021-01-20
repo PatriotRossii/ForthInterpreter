@@ -13,7 +13,7 @@ pub enum Line {
 
 impl Parse for Line {
     fn parse(pair: pest::iterators::Pair<Rule>) -> Self {
-        let inner = pair.into_inner().nth(0).unwrap();
+        let inner = pair.into_inner().next().unwrap();
         match inner.as_rule() {
             Rule::definition => Line::Definition(Definition::parse(inner)),
             Rule::expression => Line::Expression(Expression::parse(inner)),

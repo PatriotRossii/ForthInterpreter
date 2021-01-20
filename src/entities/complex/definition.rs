@@ -13,7 +13,7 @@ pub enum Definition {
 
 impl Parse for Definition {
     fn parse(pair: pest::iterators::Pair<Rule>) -> Self {
-        let inner = pair.into_inner().nth(0).unwrap();
+        let inner = pair.into_inner().next().unwrap();
         match inner.as_rule() {
             Rule::variable_definition => Definition::Variable(Variable::parse(inner)),
             Rule::constant_definition => Definition::Constant(Constant::parse(inner)),
@@ -48,7 +48,7 @@ pub struct Variable {
 
 impl Parse for Variable {
     fn parse(pair: pest::iterators::Pair<Rule>) -> Self {
-        let name = pair.into_inner().nth(0).unwrap();
+        let name = pair.into_inner().next().unwrap();
         Self {
             name: Ident::parse(name),
             value: None,

@@ -45,7 +45,7 @@ impl ExecuteExt for Literal {
 
 impl Parse for Literal {
     fn parse(pair: pest::iterators::Pair<Rule>) -> Self {
-        let inner = pair.into_inner().nth(0).unwrap();
+        let inner = pair.into_inner().next().unwrap();
         match inner.as_rule() {
             Rule::integer => Literal::Integer(inner.as_str().parse::<i64>().unwrap()),
             Rule::string => Literal::String(inner.as_str().to_string()),
@@ -56,20 +56,20 @@ impl Parse for Literal {
 
 impl Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match &self {
-            &Literal::Integer(i) => {
+        match self {
+            Literal::Integer(i) => {
                 write!(f, "{}", i)
             }
-            &Literal::String(s) => {
+            Literal::String(s) => {
                 write!(f, "{}", s)
             }
-            &Literal::Pointer(i) => {
+            Literal::Pointer(i) => {
                 write!(f, "{:?}", i)
             }
-            &Literal::Array(vec) => {
+            Literal::Array(vec) => {
                 write!(f, "{:?}", vec)
             }
-            &Literal::Unknown => {
+            Literal::Unknown => {
                 write!(f, "")
             }
         }
@@ -78,41 +78,37 @@ impl Display for Literal {
 
 impl PartialEq for Literal {
     fn eq(&self, other: &Self) -> bool {
-        match &self {
-            &Literal::Integer(i) => {
-                if let &Literal::Integer(j) = other {
+        match self {
+            Literal::Integer(i) => {
+                if let Literal::Integer(j) = *other {
                     *i == j
                 } else {
                     false
                 }
             }
-            &Literal::Pointer(i) => {
+            Literal::Pointer(i) => {
                 if let Literal::Pointer(j) = other {
                     i == j
                 } else {
                     false
                 }
             }
-            &Literal::String(s) => {
+            Literal::String(s) => {
                 if let Literal::String(os) = other {
                     s == os
                 } else {
                     false
                 }
             }
-            &Literal::Array(arr) => {
+            Literal::Array(arr) => {
                 if let Literal::Array(oa) = other {
                     arr == oa
                 } else {
                     false
                 }
             }
-            &Literal::Unknown => {
-                if let &Literal::Unknown = other {
-                    true
-                } else {
-                    false
-                }
+            Literal::Unknown => {
+				matches!(other, &Literal::Unknown)
             }
         }
     }
@@ -120,37 +116,37 @@ impl PartialEq for Literal {
 
 impl PartialOrd for Literal {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        match &self {
-            &Literal::Integer(i) => {
-                if let &Literal::Integer(j) = other {
+        match self {
+            Literal::Integer(i) => {
+                if let Literal::Integer(j) = *other {
                     i.partial_cmp(&j)
                 } else {
                     None
                 }
             }
-            &Literal::Pointer(i) => {
+            Literal::Pointer(i) => {
                 if let Literal::Pointer(j) = other {
                     i.partial_cmp(&j)
                 } else {
                     None
                 }
             }
-            &Literal::String(s) => {
+            Literal::String(s) => {
                 if let Literal::String(os) = other {
                     s.partial_cmp(&os)
                 } else {
                     None
                 }
             }
-            &Literal::Array(arr) => {
+            Literal::Array(arr) => {
                 if let Literal::Array(oarr) = other {
                     arr.partial_cmp(&oarr)
                 } else {
                     None
                 }
             }
-            &Literal::Unknown => {
-                if let &Literal::Unknown = other {
+            Literal::Unknown => {
+                if let Literal::Unknown = other {
                     None
                 } else {
                     None
@@ -181,9 +177,9 @@ impl From<String> for Literal {
 impl ToPyObject for Literal {
     type ObjectType = PyString;
     fn to_py_object(&self, py: Python) -> Self::ObjectType {
-        match &self {
-            &Literal::Integer(i) => PyString::new(py, &i.to_string()),
-            &Literal::String(i) => PyString::new(py, i.as_str()),
+        match self {
+            Literal::Integer(i) => PyString::new(py, &i.to_string()),
+            Literal::String(i) => PyString::new(py, i.as_str()),
             _ => unreachable!(),
         }
     }

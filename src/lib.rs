@@ -189,14 +189,14 @@ impl IOWords for crate::ForthInterpreter {
 
     fn emit(&mut self) -> Result<()> {
         let last = self.stack.last().ok_or(StackUnderflow)?;
-        if let &Literal::Integer(i) = last {
+        if let Literal::Integer(i) = *last {
             print!("{}", char::from_u32(i as u32).ok_or(InvalidOperands)?);
         }
         Ok(())
     }
 
     fn cr(&mut self) -> Result<()> {
-        print!("\n");
+        println!();
         Ok(())
     }
 
@@ -436,13 +436,13 @@ impl ForthInterpreter {
 
     pub fn bool(literal: &Literal) -> bool {
         match &literal {
-            &Literal::Integer(i) => !(*i != -1i64),
+            &Literal::Integer(i) => *i == -1i64,
             Literal::String(_) => true,
             _ => unreachable!(),
         }
     }
 
-    fn set_variable(&mut self, name: String, value: Literal) -> Result<()> {
+    fn set_variable(&mut self, name: String, value: Literal) {
         let variable = self.variables.iter_mut().find(|var| var.name == name);
         match variable {
             None => self.variables.push(Variable {
@@ -453,19 +453,14 @@ impl ForthInterpreter {
                 e.value = Some(value);
             }
         }
-        Ok(())
     }
 
-    fn contains_variable(&self, name: &String) -> bool {
-        if let None = self.variables.iter().find(|var| &var.name == name) {
-            false
-        } else {
-            true
-        }
+    fn contains_variable(&self, name: &str) -> bool {
+		!matches!(self.variables.iter().find(|var| var.name == name), None)
     }
 
-    fn get_variable_id(&self, name: &String) -> Option<usize> {
-        self.variables.iter().position(|var| &var.name == name)
+    fn get_variable_id(&self, name: &str) -> Option<usize> {
+        self.variables.iter().position(|var| var.name == name)
     }
 
     pub fn execute_line(&mut self, line: &str) -> Result<()> {

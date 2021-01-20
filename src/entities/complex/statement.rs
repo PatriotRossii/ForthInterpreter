@@ -12,7 +12,7 @@ pub enum Statement {
 
 impl Parse for Statement {
     fn parse(pair: pest::iterators::Pair<Rule>) -> Self {
-        let inner = pair.into_inner().nth(0).unwrap();
+        let inner = pair.into_inner().next().unwrap();
         match inner.as_rule() {
             Rule::if_then_statement => Statement::IfThen(IfThenStatement::parse(inner)),
             Rule::if_else_then_statement => {
@@ -50,7 +50,7 @@ impl Parse for IfThenStatement {
     fn parse(pair: pest::iterators::Pair<Rule>) -> Self {
         let mut inner = pair.into_inner();
         Self {
-            true_expr: Expression::parse(inner.nth(0).unwrap()),
+            true_expr: Expression::parse(inner.next().unwrap()),
         }
     }
 }
@@ -74,8 +74,8 @@ impl Parse for IfElseThenStatement {
     fn parse(pair: pest::iterators::Pair<Rule>) -> Self {
         let mut inner = pair.into_inner();
         Self {
-            true_expr: Expression::parse(inner.nth(0).unwrap()),
-            false_expr: Expression::parse(inner.nth(1).unwrap()),
+            true_expr: Expression::parse(inner.next().unwrap()),
+            false_expr: Expression::parse(inner.next().unwrap()),
         }
     }
 }
@@ -101,8 +101,8 @@ impl Parse for DoLoopStatement {
     fn parse(pair: pest::iterators::Pair<Rule>) -> Self {
         let mut inner = pair.into_inner();
         Self {
-            counter: Ident::parse(inner.nth(0).unwrap()),
-            expr: Expression::parse(inner.nth(1).unwrap()),
+            counter: Ident::parse(inner.next().unwrap()),
+            expr: Expression::parse(inner.next().unwrap()),
         }
     }
 }
@@ -114,7 +114,7 @@ impl ExecuteExt for DoLoopStatement {
             if let Literal::Integer(stop) = stop {
                 for i in start..stop {
                     self.expr.execute(interpreter)?;
-                    interpreter.set_variable(self.counter.to_string(), Literal::Integer(i))?;
+                    interpreter.set_variable(self.counter.to_string(), Literal::Integer(i));
                 }
             }
         }

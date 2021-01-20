@@ -8,4 +8,6 @@ pub enum ForthError {
     InvalidOperands,
     #[error("There are no such variable")]
     VariableNotExist,
+    #[error("Other error")]
+    OtherError,
 }
