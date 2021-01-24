@@ -5,6 +5,12 @@ pub struct Stack<T> {
     stack: Vec<T>,
 }
 
+impl<T: Clone> Default for Stack<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T: Clone> Stack<T> {
     pub fn new() -> Self {
         Self { stack: Vec::new() }

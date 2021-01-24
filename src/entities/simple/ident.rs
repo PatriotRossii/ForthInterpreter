@@ -35,8 +35,7 @@ impl ExecuteExt for Ident {
         }
 
         if interpreter.constants.contains_key(name) {
-            let r#const = interpreter.constants.get(name).unwrap();
-            interpreter.push(r#const.clone());
+            interpreter.push(interpreter.constants.get(name).unwrap().clone());
         }
 
         if interpreter.native_words.contains_key(name) {

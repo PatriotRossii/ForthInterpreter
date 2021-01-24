@@ -324,11 +324,7 @@ impl StackWords for crate::ForthInterpreter {
         let var_index = self.get_unary_operand()?;
         if let Literal::Pointer(idx) = var_index {
             if idx.offset != 0 {
-                if let Literal::Array(arr) = self.variables[idx.address]
-                    .value
-                    .as_ref()
-                    .unwrap_or(&0i64.into())
-                {
+                if let Some(Literal::Array(arr)) = &self.variables[idx.address].value {
                     if idx.offset >= arr.capacity() {
                         return Err(ForthError::IndexOutOfBound);
                     }
@@ -394,6 +390,12 @@ impl OtherWords for crate::ForthInterpreter {
 }
 
 impl StandardWords for ForthInterpreter {}
+
+impl Default for ForthInterpreter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl ForthInterpreter {
     pub fn new() -> Self {
