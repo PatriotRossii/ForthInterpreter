@@ -6,6 +6,7 @@ use std::{
 
 use crate::parser::*;
 use crate::{ExecuteExt, Result};
+use crate::entities::complex::array::Array;
 
 #[derive(Debug, Clone, PartialOrd, PartialEq, Eq, Hash)]
 pub struct Pointer {
@@ -23,7 +24,7 @@ type PointerType = Pointer;
 type IntegerType = i64;
 type StringType = std::string::String;
 
-type ArrayType = Vec<Literal>;
+type ArrayType = Array;
 
 #[derive(Debug, Clone, Eq, Hash)]
 pub enum Literal {

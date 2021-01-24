@@ -16,7 +16,7 @@ pub mod words;
 use std::{collections::HashMap, convert::TryInto};
 
 use entities::{
-    complex::definition::WordElement,
+    complex::{definition::WordElement, variable::Variable, array::Array},
     simple::literal::{Literal, Pointer},
 };
 use errors::ForthError::{self, InvalidOperands, StackUnderflow};
@@ -48,18 +48,6 @@ trait ExecuteExt {
 }
 
 const CELL_SIZE: i64 = 1;
-
-#[derive(Debug, Clone)]
-pub struct Variable {
-    name: String,
-    value: Option<Literal>,
-}
-
-impl Variable {
-    fn get_mut(&mut self) -> Option<&mut Literal> {
-        (&mut self.value).as_mut()
-    }
-}
 
 pub struct ForthInterpreter {
     stack: Stack<Literal>,
@@ -225,8 +213,7 @@ impl IOWords for crate::ForthInterpreter {
                 if let Literal::Array(arr) = pointer_storage {
                     while let Ok(ch) = self.terminal.read_char() {
                         if ch != delimiter {
-                            arr.push(Literal::Integer(ch as i64));
-                            todo!("OUT OF BOUNDS CHECK!");
+                            arr.push(Literal::Integer(ch as i64))?;
                         }
                     }
                 }
@@ -325,10 +312,7 @@ impl StackWords for crate::ForthInterpreter {
         if let Literal::Pointer(idx) = var_index {
             if idx.offset != 0 {
                 if let Some(Literal::Array(arr)) = &self.variables[idx.address].value {
-                    if idx.offset >= arr.capacity() {
-                        return Err(ForthError::IndexOutOfBound);
-                    }
-                    self.push(arr[idx.offset].clone());
+                    self.push(arr.get(idx.offset).ok_or(ForthError::IndexOutOfBound)?.clone());
                 }
             } else {
                 self.push(
@@ -356,10 +340,7 @@ impl OtherWords for crate::ForthInterpreter {
 
             match var_storage {
                 Some(Literal::Array(arr)) => {
-                    if offset >= arr.capacity() {
-                        return Err(ForthError::IndexOutOfBound);
-                    }
-                    arr[offset] = var_value;
+                    arr.set(offset, var_value)?;
                 }
                 _ => {
                     variable.value = Some(var_value);
@@ -382,7 +363,7 @@ impl OtherWords for crate::ForthInterpreter {
 
         if let Literal::Integer(count_of_elements) = count_of_elements {
             let variable = self.variables.last_mut().unwrap();
-            let array = vec![Literal::Integer(0); (count_of_elements + 1).try_into().unwrap()];
+            let array = Array::new((count_of_elements + 1).try_into().unwrap());
             variable.value = Some(Literal::Array(array));
         }
         Ok(())
