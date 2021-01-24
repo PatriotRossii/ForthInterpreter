@@ -74,6 +74,13 @@ pub struct ForthInterpreter {
 }
 
 impl MathWords for crate::ForthInterpreter {
+    fn add_ptr_offset(pointer: Pointer, offset: i64) -> Pointer {
+        Pointer {
+            offset: pointer.offset + offset as usize,
+            ..pointer
+        }
+    }
+
     fn add(&mut self) -> Result<()> {
         let (a, b) = self.get_binary_operands()?;
         match a {
@@ -82,13 +89,14 @@ impl MathWords for crate::ForthInterpreter {
                     self.push((a + b).into());
                     return Ok(());
                 }
+                if let Literal::Pointer(b) = b {
+                    self.push(Literal::Pointer(Self::add_ptr_offset(b, a)));
+                    return Ok(());
+                }
             }
             Literal::Pointer(a) => {
                 if let Literal::Integer(offset) = b {
-                    self.push(Literal::Pointer(Pointer {
-                        offset: a.offset + offset as usize,
-                        ..a
-                    }));
+                    self.push(Literal::Pointer(Self::add_ptr_offset(a, offset)));
                     return Ok(());
                 }
             }

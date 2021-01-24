@@ -1,6 +1,6 @@
 [package]
 name = "forth_interpreter"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["PatriotRossii <patriotrossii2019@mail.ru>"]
 edition = "2018"
 

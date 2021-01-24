@@ -1,4 +1,4 @@
-use crate::Result;
+use crate::{Pointer, Result};
 use std::collections::HashMap;
 
 pub trait IOWords {
@@ -45,6 +45,8 @@ pub trait MathWords {
             ("min".into(), MathWords::min as crate::WordFn),
         ]
     }
+
+    fn add_ptr_offset(pointer: Pointer, offset: i64) -> Pointer;
 }
 
 pub trait LogicWords {
