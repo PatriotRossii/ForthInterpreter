@@ -108,7 +108,7 @@ impl PartialEq for Literal {
                 }
             }
             Literal::Unknown => {
-				matches!(other, &Literal::Unknown)
+                matches!(other, &Literal::Unknown)
             }
         }
     }

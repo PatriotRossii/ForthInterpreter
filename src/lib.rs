@@ -10,6 +10,7 @@ mod entities;
 mod errors;
 pub mod parser;
 mod stack;
+mod tests;
 pub mod words;
 
 use std::{collections::HashMap, convert::TryInto};
@@ -320,6 +321,9 @@ impl StackWords for crate::ForthInterpreter {
                     .as_ref()
                     .unwrap_or(&0i64.into())
                 {
+                    if idx.offset >= arr.capacity() {
+                        return Err(ForthError::IndexOutOfBound);
+                    }
                     self.push(arr[idx.offset].clone());
                 }
             } else {
@@ -344,10 +348,13 @@ impl OtherWords for crate::ForthInterpreter {
             let offset = ptr.offset;
 
             let variable = self.variables.get_mut(address).unwrap();
-            let var_storage = variable.get_mut().unwrap();
+            let var_storage = variable.get_mut();
 
             match var_storage {
-                Literal::Array(arr) => {
+                Some(Literal::Array(arr)) => {
+                    if offset >= arr.capacity() {
+                        return Err(ForthError::IndexOutOfBound);
+                    }
                     arr[offset] = var_value;
                 }
                 _ => {
@@ -359,26 +366,20 @@ impl OtherWords for crate::ForthInterpreter {
     }
 
     fn cells(&mut self) -> Result<()> {
-        let a = self.get_unary_operand()?;
-        if let Literal::Integer(a) = a {
-            self.push(Literal::Pointer(Pointer::new((a * CELL_SIZE) as usize, 0)));
+        let count = self.get_unary_operand()?;
+        if let Literal::Integer(count) = count {
+            self.push(Literal::Integer(CELL_SIZE * count));
         }
         Ok(())
     }
 
     fn allot(&mut self) -> Result<()> {
-        let (count_of_elements, cell_width) = self.get_binary_operands()?;
+        let count_of_elements = self.get_unary_operand()?;
 
-        if let Literal::Integer(cell_width) = cell_width {
-            if cell_width != 1 {
-                unimplemented!()
-            }
-            if let Literal::Integer(count_of_elements) = count_of_elements {
-                let array = Vec::<Literal>::with_capacity(
-                    (count_of_elements * cell_width).try_into().unwrap(),
-                );
-                self.push(Literal::Array(array));
-            }
+        if let Literal::Integer(count_of_elements) = count_of_elements {
+            let variable = self.variables.last_mut().unwrap();
+            let array = vec![Literal::Integer(0); (count_of_elements + 1).try_into().unwrap()];
+            variable.value = Some(Literal::Array(array));
         }
         Ok(())
     }
@@ -456,7 +457,7 @@ impl ForthInterpreter {
     }
 
     fn contains_variable(&self, name: &str) -> bool {
-		!matches!(self.variables.iter().find(|var| var.name == name), None)
+        !matches!(self.variables.iter().find(|var| var.name == name), None)
     }
 
     fn get_variable_id(&self, name: &str) -> Option<usize> {
@@ -478,7 +479,7 @@ impl ForthInterpreter {
 }
 
 #[cfg(test)]
-mod tests {
+mod interpreter_tests {
     use crate::ForthInterpreter;
     use crate::Literal;
 
@@ -501,10 +502,16 @@ mod tests {
 
         interpreter.execute_line("variable user_var").unwrap();
         interpreter.execute_line("123 user_var !").unwrap();
+        interpreter.execute_line("user_var");
 
-        let value = interpreter.get_last_literal().unwrap();
-        if let Literal::Integer(i) = value {
-            println!("{:?}", unsafe { (*i as *const Option<Literal>).as_ref() });
+        let last = interpreter.get_last_literal().unwrap();
+
+        match last {
+            Literal::Pointer(ptr) => {
+                assert_eq!(ptr.address, 0);
+                assert_eq!(ptr.offset, 0);
+            }
+            _ => assert!(false),
         }
     }
 }

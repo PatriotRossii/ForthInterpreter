@@ -37,6 +37,10 @@ impl<T: Clone> Stack<T> {
     pub(crate) fn remove(&mut self, a: usize) -> T {
         self.stack.remove(a)
     }
+
+    pub(crate) fn is_empty(&self) -> bool {
+        self.stack.is_empty()
+    }
 }
 
 impl<T: ToPyObject + Clone> ToPyObject for Stack<T> {
