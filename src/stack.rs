@@ -1,6 +1,6 @@
 use cpython::{PyList, PyObject, Python, PythonObject, ToPyObject};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Stack<T> {
     stack: Vec<T>,
 }

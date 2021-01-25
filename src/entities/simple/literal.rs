@@ -4,9 +4,9 @@ use std::{
     fmt::{self, Display},
 };
 
+use crate::entities::complex::array::Array;
 use crate::parser::*;
 use crate::{ExecuteExt, Result};
-use crate::entities::complex::array::Array;
 
 #[derive(Debug, Clone, PartialOrd, PartialEq, Eq, Hash)]
 pub struct Pointer {

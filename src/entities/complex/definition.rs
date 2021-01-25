@@ -132,26 +132,20 @@ pub struct Word {
 
 impl Parse for Word {
     fn parse(pair: pest::iterators::Pair<Rule>) -> Self {
-        let mut name: Option<Ident> = None;
-        let mut value: Option<WordElement> = None;
-
-        for inner_pair in pair.into_inner() {
-            match inner_pair.as_rule() {
-                Rule::ident => {
-                    name = Some(Ident::parse(inner_pair));
-                }
-                Rule::expression => {
-                    value = Some(WordElement::Expression(Expression::parse(inner_pair)));
-                }
-                Rule::statement => {
-                    value = Some(WordElement::Statement(Statement::parse(inner_pair)));
-                }
+        let mut inner_pair = pair.into_inner();
+        let name = Ident::parse(inner_pair.next().unwrap());
+        let value = {
+            let pair = inner_pair.next().unwrap();
+            match pair.as_rule() {
+                Rule::expression => WordElement::Expression(Expression::parse(pair)),
+                Rule::statement => WordElement::Statement(Statement::parse(pair)),
                 _ => unreachable!(),
             }
-        }
+        };
+
         Self {
-            name: name.unwrap(),
-            value: value.unwrap(),
+            name: name,
+            value: value,
         }
     }
 }

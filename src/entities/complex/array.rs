@@ -1,5 +1,5 @@
+use crate::{errors::ForthError, Literal, Result};
 use std::ops::{Index, IndexMut};
-use crate::{Result, Literal, errors::ForthError};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct Array {
@@ -10,7 +10,11 @@ pub struct Array {
 
 impl Array {
     pub fn new(size: usize) -> Self {
-        Self { storage: vec![Literal::Integer(0); size], capacity: size, size: 0 }
+        Self {
+            storage: vec![Literal::Integer(0); size],
+            capacity: size,
+            size: 0,
+        }
     }
     pub fn get(&self, index: usize) -> Option<&Literal> {
         self.storage.get(index)

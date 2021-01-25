@@ -16,7 +16,7 @@ pub mod words;
 use std::{collections::HashMap, convert::TryInto};
 
 use entities::{
-    complex::{definition::WordElement, variable::Variable, array::Array},
+    complex::{array::Array, definition::WordElement, variable::Variable},
     simple::literal::{Literal, Pointer},
 };
 use errors::ForthError::{self, InvalidOperands, StackUnderflow};
@@ -312,7 +312,11 @@ impl StackWords for crate::ForthInterpreter {
         if let Literal::Pointer(idx) = var_index {
             if idx.offset != 0 {
                 if let Some(Literal::Array(arr)) = &self.variables[idx.address].value {
-                    self.push(arr.get(idx.offset).ok_or(ForthError::IndexOutOfBound)?.clone());
+                    self.push(
+                        arr.get(idx.offset)
+                            .ok_or(ForthError::IndexOutOfBound)?
+                            .clone(),
+                    );
                 }
             } else {
                 self.push(
@@ -462,6 +466,17 @@ impl ForthInterpreter {
         line.execute(self)?;
 
         Ok(())
+    }
+
+    pub fn execute(&mut self, text: &str) -> Result<()> {
+        for line in text.lines() {
+            self.execute_line(line)?;
+        }
+        Ok(())
+    }
+
+    pub fn clear_state(&mut self) {
+        *self = Self::new();
     }
 
     fn push(&mut self, value: Literal) {
