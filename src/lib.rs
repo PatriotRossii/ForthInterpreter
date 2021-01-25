@@ -180,7 +180,7 @@ impl MathWords for crate::ForthInterpreter {
 
 impl IOWords for crate::ForthInterpreter {
     fn print_top(&mut self) -> Result<()> {
-        print!("{}", *self.stack.last().ok_or(StackUnderflow)?);
+        print!("{} ", *self.stack.last().ok_or(StackUnderflow)?);
         Ok(())
     }
 
