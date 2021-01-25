@@ -23,7 +23,7 @@ impl Parse for Line {
 }
 
 impl ExecuteExt for Line {
-    fn execute(&mut self, interpreter: &mut ForthInterpreter) -> Result<()> {
+    fn execute(&self, interpreter: &mut ForthInterpreter) -> Result<()> {
         match self {
             Self::Definition(e) => e.execute(interpreter)?,
             Self::Expression(e) => e.execute(interpreter)?,

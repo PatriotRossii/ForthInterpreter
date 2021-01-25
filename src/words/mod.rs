@@ -32,6 +32,11 @@ pub trait MathWords {
     fn max(&mut self) -> Result<()>;
     fn min(&mut self) -> Result<()>;
 
+    fn add_to(&mut self) -> Result<()>;
+    fn sub_from(&mut self) -> Result<()>;
+    fn mul_by(&mut self) -> Result<()>;
+    fn div_by(&mut self) -> Result<()>;
+
     fn get_words() -> Vec<(String, crate::WordFn)> {
         vec![
             ("+".into(), MathWords::add as crate::WordFn),
@@ -43,6 +48,10 @@ pub trait MathWords {
             ("abs".into(), MathWords::abs as crate::WordFn),
             ("max".into(), MathWords::max as crate::WordFn),
             ("min".into(), MathWords::min as crate::WordFn),
+            ("+!".into(), MathWords::add_to),
+            ("-!".into(), MathWords::sub_from),
+            ("*!".into(), MathWords::mul_by),
+            ("/!".into(), MathWords::div_by),
         ]
     }
 
@@ -63,7 +72,7 @@ pub trait LogicWords {
             ("=".into(), LogicWords::equal as crate::WordFn),
             (">".into(), LogicWords::greater as crate::WordFn),
             ("<".into(), LogicWords::less as crate::WordFn),
-            ("!".into(), LogicWords::not as crate::WordFn),
+            ("invert".into(), LogicWords::not as crate::WordFn),
             ("and".into(), LogicWords::and as crate::WordFn),
             ("or".into(), LogicWords::or as crate::WordFn),
         ]

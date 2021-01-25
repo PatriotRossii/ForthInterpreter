@@ -24,7 +24,7 @@ impl Parse for Definition {
 }
 
 impl ExecuteExt for Definition {
-    fn execute(&mut self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
+    fn execute(&self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
         match self {
             Self::Variable(variable) => {
                 variable.execute(interpreter)?;
@@ -57,7 +57,7 @@ impl Parse for Variable {
 }
 
 impl ExecuteExt for Variable {
-    fn execute(&mut self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
+    fn execute(&self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
         interpreter.variables.push(crate::Variable {
             name: self.name.to_string(),
             value: None,
@@ -82,7 +82,7 @@ impl Parse for Constant {
                     var_name = Some(Ident::parse(inner_pair));
                 }
                 Rule::literal => {
-                    value = Some(inner_pair.as_str().into());
+                    value = Some(inner_pair.as_str().parse::<i64>().unwrap().into());
                 }
                 _ => unreachable!(),
             }
@@ -96,7 +96,7 @@ impl Parse for Constant {
 }
 
 impl ExecuteExt for Constant {
-    fn execute(&mut self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
+    fn execute(&self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
         interpreter
             .constants
             .insert(self.name.to_string(), self.value.clone());
@@ -111,7 +111,7 @@ pub enum WordElement {
 }
 
 impl ExecuteExt for WordElement {
-    fn execute(&mut self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
+    fn execute(&self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
         match self {
             Self::Statement(stmt) => {
                 stmt.execute(interpreter)?;
@@ -127,7 +127,7 @@ impl ExecuteExt for WordElement {
 #[derive(Debug, Clone)]
 pub struct Word {
     name: Ident,
-    value: WordElement,
+    value: Vec<WordElement>,
 }
 
 impl Parse for Word {
@@ -135,23 +135,26 @@ impl Parse for Word {
         let mut inner_pair = pair.into_inner();
         let name = Ident::parse(inner_pair.next().unwrap());
         let value = {
+            let mut word_elements = vec![];
             let pair = inner_pair.next().unwrap();
             match pair.as_rule() {
-                Rule::expression => WordElement::Expression(Expression::parse(pair)),
-                Rule::statement => WordElement::Statement(Statement::parse(pair)),
+                Rule::expression => {
+                    word_elements.push(WordElement::Expression(Expression::parse(pair)))
+                }
+                Rule::statement => {
+                    word_elements.push(WordElement::Statement(Statement::parse(pair)))
+                }
                 _ => unreachable!(),
             }
+            word_elements
         };
 
-        Self {
-            name: name,
-            value: value,
-        }
+        Self { name, value }
     }
 }
 
 impl ExecuteExt for Word {
-    fn execute(&mut self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
+    fn execute(&self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
         interpreter
             .user_words
             .insert(self.name.to_string(), self.value.clone());

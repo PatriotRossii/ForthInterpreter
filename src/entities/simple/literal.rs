@@ -38,7 +38,7 @@ pub enum Literal {
 }
 
 impl ExecuteExt for Literal {
-    fn execute(&mut self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
+    fn execute(&self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
         interpreter.stack.push(self.clone());
         Ok(())
     }

@@ -20,7 +20,7 @@ impl Parse for ExpressionElement {
 }
 
 impl ExecuteExt for ExpressionElement {
-    fn execute(&mut self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
+    fn execute(&self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
         match self {
             Self::Literal(literal) => {
                 literal.execute(interpreter)?;
@@ -57,8 +57,8 @@ impl Parse for Expression {
 }
 
 impl ExecuteExt for Expression {
-    fn execute(&mut self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
-        for element in &mut self.elements {
+    fn execute(&self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
+        for element in &self.elements {
             element.execute(interpreter)?;
         }
         Ok(())

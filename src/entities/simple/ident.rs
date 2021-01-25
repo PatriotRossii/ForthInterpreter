@@ -24,7 +24,7 @@ impl ToString for Ident {
 }
 
 impl ExecuteExt for Ident {
-    fn execute(&mut self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
+    fn execute(&self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
         let name = &self.name;
 
         if interpreter.contains_variable(name) {
@@ -44,8 +44,10 @@ impl ExecuteExt for Ident {
         }
 
         if interpreter.user_words.contains_key(name) {
-            let word = interpreter.user_words.get_mut(name).unwrap();
-            word.clone().execute(interpreter)?;
+            let word = interpreter.user_words.get(name).unwrap().clone();
+            for element in word {
+                element.execute(interpreter)?;
+            }
         }
 
         Ok(())

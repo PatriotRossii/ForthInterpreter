@@ -44,7 +44,7 @@ macro_rules! ternary {
 type WordFn = fn(&mut ForthInterpreter) -> Result<()>;
 
 trait ExecuteExt {
-    fn execute(&mut self, interpreter: &mut ForthInterpreter) -> Result<()>;
+    fn execute(&self, interpreter: &mut ForthInterpreter) -> Result<()>;
 }
 
 const CELL_SIZE: i64 = 1;
@@ -58,7 +58,7 @@ pub struct ForthInterpreter {
     constants: HashMap<String, Literal>, // No need in Option cause constant is initialized always
 
     native_words: HashMap<String, WordFn>,
-    user_words: HashMap<String, WordElement>,
+    user_words: HashMap<String, Vec<WordElement>>,
 }
 
 impl MathWords for crate::ForthInterpreter {
@@ -176,6 +176,62 @@ impl MathWords for crate::ForthInterpreter {
         }
         Err(InvalidOperands)
     }
+
+    fn add_to(&mut self) -> Result<()> {
+        let (value, pointer) = self.get_binary_operands()?;
+
+        self.push(pointer.clone());
+        self.fetch_variable()?;
+        self.push(value);
+
+        self.add()?;
+        self.push(pointer);
+        self.store_variable()?;
+
+        Ok(())
+    }
+
+    fn sub_from(&mut self) -> Result<()> {
+        let (value, pointer) = self.get_binary_operands()?;
+
+        self.push(pointer.clone());
+        self.fetch_variable()?;
+        self.push(value);
+
+        self.sub()?;
+        self.push(pointer);
+        self.store_variable()?;
+
+        Ok(())
+    }
+
+    fn mul_by(&mut self) -> Result<()> {
+        let (value, pointer) = self.get_binary_operands()?;
+
+        self.push(pointer.clone());
+        self.fetch_variable()?;
+        self.push(value);
+
+        self.mul()?;
+        self.push(pointer);
+        self.store_variable()?;
+
+        Ok(())
+    }
+
+    fn div_by(&mut self) -> Result<()> {
+        let (value, pointer) = self.get_binary_operands()?;
+
+        self.push(pointer.clone());
+        self.fetch_variable()?;
+        self.push(value);
+
+        self.div()?;
+        self.push(pointer);
+        self.store_variable()?;
+
+        Ok(())
+    }
 }
 
 impl IOWords for crate::ForthInterpreter {
@@ -226,32 +282,31 @@ impl IOWords for crate::ForthInterpreter {
 impl LogicWords for crate::ForthInterpreter {
     fn equal(&mut self) -> Result<()> {
         let (a, b) = self.get_binary_operands()?;
-        self.stack.push(Literal::Integer(ternary!(a == b, -1, 0)));
+        self.push(Literal::Integer(ternary!(a == b, -1, 0)));
         Ok(())
     }
 
     fn greater(&mut self) -> Result<()> {
         let (a, b) = self.get_binary_operands()?;
-        self.stack.push(Literal::Integer(ternary!(a > b, -1, 0)));
+        self.push(Literal::Integer(ternary!(a > b, -1, 0)));
         Ok(())
     }
 
     fn less(&mut self) -> Result<()> {
         let (a, b) = self.get_binary_operands()?;
-        self.stack.push(Literal::Integer(ternary!(a < b, -1, 0)));
+        self.push(Literal::Integer(ternary!(a < b, -1, 0)));
         Ok(())
     }
 
     fn not(&mut self) -> Result<()> {
         let a = self.stack.pop().ok_or(StackUnderflow)?;
-        self.stack
-            .push(Literal::Integer(ternary!(a == 0.into(), -1, 0)));
+        self.push(Literal::Integer(ternary!(a == 0.into(), -1, 0)));
         Ok(())
     }
 
     fn and(&mut self) -> Result<()> {
         let (a, b) = self.get_binary_operands()?;
-        self.stack.push(Literal::Integer(ternary!(
+        self.push(Literal::Integer(ternary!(
             a != 0.into() && b != 0.into(),
             -1,
             0
@@ -261,7 +316,7 @@ impl LogicWords for crate::ForthInterpreter {
 
     fn or(&mut self) -> Result<()> {
         let (a, b) = self.get_binary_operands()?;
-        self.stack.push(Literal::Integer(ternary!(
+        self.push(Literal::Integer(ternary!(
             a != 0.into() || b != 0.into(),
             -1,
             0
@@ -392,7 +447,7 @@ impl ForthInterpreter {
             terminal: Term::stdout(),
 
             native_words: <Self as StandardWords>::get_words(),
-            user_words: HashMap::<String, WordElement>::new(),
+            user_words: HashMap::<String, Vec<WordElement>>::new(),
         }
     }
 
@@ -426,7 +481,7 @@ impl ForthInterpreter {
         &self.native_words
     }
 
-    pub fn get_user_words_dump(&self) -> &HashMap<String, WordElement> {
+    pub fn get_user_words_dump(&self) -> &HashMap<String, Vec<WordElement>> {
         &self.user_words
     }
 

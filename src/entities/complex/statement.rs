@@ -25,7 +25,7 @@ impl Parse for Statement {
 }
 
 impl ExecuteExt for Statement {
-    fn execute(&mut self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
+    fn execute(&self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
         match self {
             Self::IfThen(stmt) => {
                 stmt.execute(interpreter)?;
@@ -56,7 +56,7 @@ impl Parse for IfThenStatement {
 }
 
 impl ExecuteExt for IfThenStatement {
-    fn execute(&mut self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
+    fn execute(&self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
         if crate::ForthInterpreter::bool(interpreter.get_last_literal()?) {
             self.true_expr.execute(interpreter)?;
         }
@@ -81,7 +81,7 @@ impl Parse for IfElseThenStatement {
 }
 
 impl ExecuteExt for IfElseThenStatement {
-    fn execute(&mut self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
+    fn execute(&self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
         if crate::ForthInterpreter::bool(interpreter.get_last_literal()?) {
             self.true_expr.execute(interpreter)?;
         } else {
@@ -108,7 +108,7 @@ impl Parse for DoLoopStatement {
 }
 
 impl ExecuteExt for DoLoopStatement {
-    fn execute(&mut self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
+    fn execute(&self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
         let (start, stop) = interpreter.get_binary_operands().unwrap();
         if let Literal::Integer(start) = start {
             if let Literal::Integer(stop) = stop {
