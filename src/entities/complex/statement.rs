@@ -1,6 +1,6 @@
 use crate::entities::{complex::expression::Expression, simple::ident::Ident};
 
-use crate::parser::*;
+use crate::parser::{Parse, Rule};
 use crate::{entities::simple::literal::Literal, ExecuteExt, Result};
 
 #[derive(Debug, Clone)]
@@ -14,11 +14,9 @@ impl Parse for Statement {
     fn parse(pair: pest::iterators::Pair<Rule>) -> Self {
         let inner = pair.into_inner().next().unwrap();
         match inner.as_rule() {
-            Rule::if_then_statement => Statement::IfThen(IfThenStatement::parse(inner)),
-            Rule::if_else_then_statement => {
-                Statement::IfElseThen(IfElseThenStatement::parse(inner))
-            }
-            Rule::do_loop => Statement::DoLoop(DoLoopStatement::parse(inner)),
+            Rule::if_then_statement => Self::IfThen(IfThenStatement::parse(inner)),
+            Rule::if_else_then_statement => Self::IfElseThen(IfElseThenStatement::parse(inner)),
+            Rule::do_loop => Self::DoLoop(DoLoopStatement::parse(inner)),
             _ => unreachable!(),
         }
     }
@@ -57,7 +55,7 @@ impl Parse for IfThenStatement {
 
 impl ExecuteExt for IfThenStatement {
     fn execute(&self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
-        if crate::ForthInterpreter::bool(interpreter.get_last_literal()?) {
+        if interpreter.get_last_literal()?.into() {
             self.true_expr.execute(interpreter)?;
         }
         Ok(())
@@ -82,7 +80,7 @@ impl Parse for IfElseThenStatement {
 
 impl ExecuteExt for IfElseThenStatement {
     fn execute(&self, interpreter: &mut crate::ForthInterpreter) -> Result<()> {
-        if crate::ForthInterpreter::bool(interpreter.get_last_literal()?) {
+        if interpreter.get_last_literal()?.into() {
             self.true_expr.execute(interpreter)?;
         } else {
             self.false_expr.execute(interpreter)?;
@@ -114,7 +112,7 @@ impl ExecuteExt for DoLoopStatement {
             if let Literal::Integer(stop) = stop {
                 for i in start..stop {
                     self.expr.execute(interpreter)?;
-                    interpreter.set_variable(self.counter.to_string(), Literal::Integer(i));
+                    interpreter.set_variable(self.counter.name(), Literal::Integer(i));
                 }
             }
         }

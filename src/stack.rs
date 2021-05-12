@@ -12,22 +12,27 @@ impl<T: Clone> Default for Stack<T> {
 }
 
 impl<T: Clone> Stack<T> {
+    #[inline]
     pub fn new() -> Self {
         Self { stack: Vec::new() }
     }
 
+    #[inline]
     pub fn push(&mut self, value: T) {
         self.stack.push(value);
     }
 
+    #[inline]
     pub fn pop(&mut self) -> Option<T> {
         self.stack.pop()
     }
 
+    #[inline]
     pub fn last(&self) -> Option<&T> {
         self.stack.last()
     }
 
+    #[inline]
     pub fn length(&self) -> usize {
         self.stack.len()
     }
@@ -65,7 +70,7 @@ impl<T: ToPyObject + Clone> ToPyObject for Stack<T> {
 }
 
 impl<T: Clone> From<Vec<T>> for Stack<T> {
-    fn from(value: Vec<T>) -> Stack<T> {
+    fn from(value: Vec<T>) -> Self {
         Self { stack: value }
     }
 }

@@ -9,6 +9,7 @@ pub struct Array {
 }
 
 impl Array {
+    #[inline]
     pub fn new(size: usize) -> Self {
         Self {
             storage: vec![Literal::Integer(0); size],
@@ -16,20 +17,24 @@ impl Array {
             size: 0,
         }
     }
+
+    #[inline]
     pub fn get(&self, index: usize) -> Option<&Literal> {
         self.storage.get(index)
     }
 
+    #[inline]
     pub fn push(&mut self, value: Literal) -> Result<()> {
-        if self.size != self.capacity {
+        if self.size == self.capacity {
+            Err(ForthError::IndexOutOfBound)
+        } else {
             self.storage.push(value);
             self.size += 1;
             Ok(())
-        } else {
-            Err(ForthError::IndexOutOfBound)
         }
     }
 
+    #[inline]
     pub fn set(&mut self, index: usize, value: Literal) -> Result<()> {
         if index < self.capacity {
             self.storage[index] = value;
@@ -39,6 +44,7 @@ impl Array {
         }
     }
 
+    #[inline]
     pub fn capacity(&self) -> usize {
         self.capacity
     }

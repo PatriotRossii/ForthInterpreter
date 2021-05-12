@@ -1,7 +1,7 @@
 use crate::entities::complex::{expression::Expression, statement::Statement};
 use crate::entities::simple::{ident::Ident, literal::Literal};
 
-use crate::parser::*;
+use crate::parser::{Parse, Rule};
 use crate::{ExecuteExt, Result};
 
 #[derive(Debug, Clone)]
@@ -15,9 +15,9 @@ impl Parse for Definition {
     fn parse(pair: pest::iterators::Pair<Rule>) -> Self {
         let inner = pair.into_inner().next().unwrap();
         match inner.as_rule() {
-            Rule::variable_definition => Definition::Variable(Variable::parse(inner)),
-            Rule::constant_definition => Definition::Constant(Constant::parse(inner)),
-            Rule::word_definition => Definition::Word(Word::parse(inner)),
+            Rule::variable_definition => Self::Variable(Variable::parse(inner)),
+            Rule::constant_definition => Self::Constant(Constant::parse(inner)),
+            Rule::word_definition => Self::Word(Word::parse(inner)),
             _ => unreachable!(),
         }
     }

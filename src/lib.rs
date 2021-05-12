@@ -1,4 +1,4 @@
-#![feature(assoc_char_funcs)]
+#![warn(clippy::pedantic)]
 #![feature(hash_raw_entry)]
 
 extern crate pest;
@@ -24,8 +24,8 @@ use stack::Stack;
 
 use pest::Parser;
 
-use parser::*;
-use words::*;
+use parser::{ForthParser, Parse, Rule};
+use words::{IOWords, LogicWords, MathWords, OtherWords, StackWords, StandardWords};
 
 use console::Term;
 
@@ -365,22 +365,23 @@ impl StackWords for crate::ForthInterpreter {
     fn fetch_variable(&mut self) -> Result<()> {
         let var_index = self.get_unary_operand()?;
         if let Literal::Pointer(idx) = var_index {
-            if idx.offset != 0 {
-                if let Some(Literal::Array(arr)) = &self.variables[idx.address].value {
-                    self.push(
-                        arr.get(idx.offset)
-                            .ok_or(ForthError::IndexOutOfBound)?
-                            .clone(),
-                    );
-                }
-            } else {
+            if idx.offset == 0 {
                 self.push(
                     self.variables[idx.address]
                         .value
                         .as_ref()
-                        .unwrap_or(&0i64.into())
+                        .unwrap_or(&0_i64.into())
                         .clone(),
                 );
+            } else {
+                if let Some(Literal::Array(arr)) = &self.variables[idx.address].value {
+                    let variable = arr
+                        .get(idx.offset)
+                        .ok_or(ForthError::IndexOutOfBound)?
+                        .clone();
+
+                    self.push(variable);
+                }
             }
         }
         Ok(())
@@ -438,6 +439,7 @@ impl Default for ForthInterpreter {
 }
 
 impl ForthInterpreter {
+    #[inline]
     pub fn new() -> Self {
         Self {
             stack: Stack::new(),
@@ -452,7 +454,7 @@ impl ForthInterpreter {
     }
 
     fn get_unary_operand(&mut self) -> Result<Literal> {
-        Ok(self.stack.pop().ok_or(StackUnderflow)?)
+        self.stack.pop().ok_or(StackUnderflow)
     }
 
     fn get_binary_operands(&mut self) -> Result<(Literal, Literal)> {
@@ -461,43 +463,41 @@ impl ForthInterpreter {
         Ok((a, b))
     }
 
+    #[inline]
     pub fn get_last_literal(&self) -> Result<&Literal> {
-        Ok(self.stack.last().ok_or(StackUnderflow)?)
+        self.stack.last().ok_or(StackUnderflow)
     }
 
+    #[inline]
     pub fn get_stack_dump(&self) -> &Stack<Literal> {
         &self.stack
     }
 
+    #[inline]
     pub fn get_vars_dump(&self) -> &Vec<Variable> {
         &self.variables
     }
 
+    #[inline]
     pub fn get_consts_dump(&self) -> &HashMap<String, Literal> {
         &self.constants
     }
 
+    #[inline]
     pub fn get_native_words_dump(&self) -> &HashMap<String, WordFn> {
         &self.native_words
     }
 
+    #[inline]
     pub fn get_user_words_dump(&self) -> &HashMap<String, Vec<WordElement>> {
         &self.user_words
     }
 
-    pub fn bool(literal: &Literal) -> bool {
-        match &literal {
-            &Literal::Integer(i) => *i == -1i64,
-            Literal::String(_) => true,
-            _ => unreachable!(),
-        }
-    }
-
-    fn set_variable(&mut self, name: String, value: Literal) {
+    fn set_variable(&mut self, name: &str, value: Literal) {
         let variable = self.variables.iter_mut().find(|var| var.name == name);
         match variable {
             None => self.variables.push(Variable {
-                name: name.clone(),
+                name: name.to_string(),
                 value: Some(value),
             }),
             Some(e) => {
@@ -514,15 +514,17 @@ impl ForthInterpreter {
         self.variables.iter().position(|var| var.name == name)
     }
 
+    #[inline]
     pub fn execute_line(&mut self, line: &str) -> Result<()> {
         let line_pair = ForthParser::parse(Rule::line, line).unwrap();
-        let mut line = entities::Line::parse(line_pair.peek().unwrap());
+        let line = entities::Line::parse(line_pair.peek().unwrap());
 
         line.execute(self)?;
 
         Ok(())
     }
 
+    #[inline]
     pub fn execute(&mut self, text: &str) -> Result<()> {
         for line in text.lines() {
             self.execute_line(line)?;
@@ -530,6 +532,7 @@ impl ForthInterpreter {
         Ok(())
     }
 
+    #[inline]
     pub fn clear_state(&mut self) {
         *self = Self::new();
     }

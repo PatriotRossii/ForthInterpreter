@@ -1,5 +1,5 @@
 use crate::entities::simple::{ident::Ident, literal::Literal};
-use crate::parser::*;
+use crate::parser::{Parse, Rule};
 
 use crate::{ExecuteExt, Result};
 
@@ -12,8 +12,8 @@ pub enum ExpressionElement {
 impl Parse for ExpressionElement {
     fn parse(pair: pest::iterators::Pair<Rule>) -> Self {
         match pair.as_rule() {
-            Rule::literal => ExpressionElement::Literal(Literal::parse(pair)),
-            Rule::ident => ExpressionElement::Ident(Ident::parse(pair)),
+            Rule::literal => Self::Literal(Literal::parse(pair)),
+            Rule::ident => Self::Ident(Ident::parse(pair)),
             _ => unreachable!(),
         }
     }

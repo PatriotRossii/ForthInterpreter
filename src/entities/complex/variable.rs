@@ -7,6 +7,7 @@ pub struct Variable {
 }
 
 impl Variable {
+    #[inline]
     pub fn get_mut(&mut self) -> Option<&mut Literal> {
         (&mut self.value).as_mut()
     }

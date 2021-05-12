@@ -1,4 +1,4 @@
-use crate::parser::*;
+use crate::parser::{Parse, Rule};
 use crate::{
     entities::simple::literal::{Literal, Pointer},
     ExecuteExt, Result,
@@ -9,9 +9,15 @@ pub struct Ident {
     name: String,
 }
 
+impl Ident {
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+}
+
 impl Parse for Ident {
     fn parse(pair: pest::iterators::Pair<Rule>) -> Self {
-        Ident {
+        Self {
             name: pair.as_str().to_string(),
         }
     }
@@ -19,7 +25,7 @@ impl Parse for Ident {
 
 impl ToString for Ident {
     fn to_string(&self) -> String {
-        self.name.to_string()
+        self.name.clone()
     }
 }
 
