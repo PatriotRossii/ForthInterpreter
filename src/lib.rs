@@ -566,7 +566,7 @@ mod interpreter_tests {
 
         interpreter.execute_line("variable user_var").unwrap();
         interpreter.execute_line("123 user_var !").unwrap();
-        interpreter.execute_line("user_var");
+        interpreter.execute_line("user_var").unwrap();
 
         let last = interpreter.get_last_literal().unwrap();
 

@@ -15,7 +15,7 @@ py_module_initializer!(py_forth, |py, m| {
 });
 
 fn execute_line(_: Python, line: &str) -> PyResult<NoArgs> {
-    INTERPRETER.lock().unwrap().execute_line(line);
+    INTERPRETER.lock().unwrap().execute_line(line).unwrap();
     Ok(NoArgs)
 }
 

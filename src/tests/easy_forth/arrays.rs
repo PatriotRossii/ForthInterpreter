@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod arrays_chapter {
-    use crate::{ForthInterpreter, Literal, Pointer};
+    use crate::{ForthInterpreter, Literal};
 
     #[test]
     fn arrays() {

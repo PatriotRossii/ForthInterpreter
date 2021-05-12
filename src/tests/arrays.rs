@@ -6,8 +6,8 @@ mod array_tests {
     #[test]
     fn test_create() {
         let mut interpreter = ForthInterpreter::new();
-        interpreter.execute_line("variable numbers");
-        interpreter.execute_line("3 cells allot");
+        interpreter.execute_line("variable numbers").unwrap();
+        interpreter.execute_line("3 cells allot").unwrap();
 
         let dump = interpreter.get_vars_dump();
 
@@ -23,14 +23,14 @@ mod array_tests {
     #[test]
     fn test_access() {
         let mut interpreter = ForthInterpreter::new();
-        interpreter.execute_line("variable numbers");
-        interpreter.execute_line("3 cells allot");
+        interpreter.execute_line("variable numbers").unwrap();
+        interpreter.execute_line("3 cells allot").unwrap();
 
-        interpreter.execute_line("10 numbers 0 cells + !");
-        interpreter.execute_line("20 numbers 1 cells + !");
-        interpreter.execute_line("30 numbers 2 cells + !");
-        interpreter.execute_line("40 numbers 3 cells + !");
-        interpreter.execute_line("50 numbers 3 cells + !");
+        interpreter.execute_line("10 numbers 0 cells + !").unwrap();
+        interpreter.execute_line("20 numbers 1 cells + !").unwrap();
+        interpreter.execute_line("30 numbers 2 cells + !").unwrap();
+        interpreter.execute_line("40 numbers 3 cells + !").unwrap();
+        interpreter.execute_line("50 numbers 3 cells + !").unwrap();
         interpreter
             .execute_line("100 numbers 4 cells + !")
             .unwrap_err();
@@ -47,7 +47,7 @@ mod array_tests {
         }
         assert!(interpreter.get_stack_dump().is_empty());
 
-        interpreter.execute_line("numbers 2 cells + @");
+        interpreter.execute_line("numbers 2 cells + @").unwrap();
         assert_eq!(
             interpreter.get_last_literal().unwrap(),
             &Literal::Integer(30)
