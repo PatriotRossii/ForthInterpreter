@@ -364,6 +364,7 @@ impl StackWords for crate::ForthInterpreter {
 
     fn fetch_variable(&mut self) -> Result<()> {
         let var_index = self.get_unary_operand()?;
+        
         if let Literal::Pointer(idx) = var_index {
             if idx.offset == 0 {
                 self.push(

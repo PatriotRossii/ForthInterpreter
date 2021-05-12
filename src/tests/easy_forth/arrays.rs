@@ -14,7 +14,7 @@ mod arrays_chapter {
                 .execute(&format!("{} numbers {} cells + !", i * 10, i))
                 .unwrap();
             interpreter
-                .execute(&format!("{} cells numbers + @", i))
+                .execute(&format!("numbers {} cells + @", i))
                 .unwrap();
             assert_eq!(
                 interpreter.get_unary_operand().unwrap(),
